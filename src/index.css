@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "DM Sans", system-ui, sans-serif;
+  --font-display: "Outfit", system-ui, sans-serif;
+  --color-void: #0d0d0f;
+  --color-ink: #18181b;
+  --color-slate: #27272a;
+  --color-muted: #71717a;
+  --color-border: #27272a;
+  --color-accent: #f97316;
+  --color-accent-hover: #ea580c;
+  --color-surface: #18181b;
+  --color-card: #1f1f23;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-void text-zinc-100 antialiased min-h-screen;
+    font-family: var(--font-sans);
+  }
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+  }
+}
