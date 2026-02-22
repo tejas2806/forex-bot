@@ -7,12 +7,18 @@ import { Badge } from "@/components/ui/badge"
 import { formatPrice } from "@/lib/utils"
 import { useCartStore } from "@/stores/cart-store"
 
+function getPerformancePath(product: Product): string {
+  const bot = product.performanceBot ?? (product.id === "1" || product.id === "2" || product.id === "3" ? product.id : null)
+  return bot ? `/performance/${bot}` : "/performance"
+}
+
 interface ProductCardProps {
   product: Product
 }
 
 export function ProductCard({ product }: ProductCardProps) {
   const addItem = useCartStore((s) => s.addItem)
+  const performancePath = getPerformancePath(product)
 
   return (
     <Card className="group overflow-hidden transition-all hover:border-zinc-600 hover:shadow-lg">
@@ -56,7 +62,7 @@ export function ProductCard({ product }: ProductCardProps) {
             Add to cart
           </Button>
           <Button variant="outline" size="sm" asChild>
-            <Link to={product.performanceBot === "2" || product.id === "2" ? "/performance/2" : product.performanceBot === "1" || product.id === "1" ? "/performance/1" : "/performance"}>
+            <Link to={performancePath}>
               <LineChart className="h-4 w-4 mr-1" />
               Check performance
             </Link>

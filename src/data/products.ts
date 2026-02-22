@@ -49,6 +49,7 @@ export const products: Product[] = [
     category: "Expert Advisors",
     categoryId: "1",
     inStock: true,
+    performanceBot: "3",
   },
   {
     id: "4",

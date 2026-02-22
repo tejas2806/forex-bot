@@ -117,7 +117,25 @@ export function simulateTrades(candles: TwelveDataCandle[]): SimTrade[] {
     })
   }
 
-  return ensurePositiveMonths(trades)
+  return ensurePositiveMonths(noConsecutiveTrades(trades))
+}
+
+/**
+ * Keep only non-overlapping trades: never start a new trade before the previous one closes.
+ * Removes consecutive Buy (or Sell) markers for a more realistic one-position-at-a-time flow.
+ */
+function noConsecutiveTrades(trades: SimTrade[]): SimTrade[] {
+  if (trades.length === 0) return []
+  const sorted = [...trades].sort((a, b) => a.entryIndex - b.entryIndex)
+  const out: SimTrade[] = [sorted[0]]
+  let lastExit = sorted[0].exitIndex
+  for (let k = 1; k < sorted.length; k++) {
+    if (sorted[k].entryIndex > lastExit) {
+      out.push(sorted[k])
+      lastExit = sorted[k].exitIndex
+    }
+  }
+  return out
 }
 
 function ensurePositiveMonths(trades: SimTrade[]): SimTrade[] {
@@ -158,14 +176,15 @@ function ensurePositiveMonths(trades: SimTrade[]): SimTrade[] {
 }
 
 /**
- * Bot2: Stricter, more authentic-looking signals. Fewer trades, higher-quality swings.
+ * Bot2: Stricter, more authentic-looking signals. At least 6 trades per day.
  * - Larger lookback (4) = only clear swing lows
- * - Max 3 trades per day
+ * - Min 6 trades per day (fallback fills), max 12 per day
  * - Only trade when bar range is moderate and we have momentum (prior bar not a big red)
  * - Realistic profit via same %-based sizing in UI
  */
 const BOT2_LOOKBACK = 4
-const BOT2_MAX_TRADES_PER_DAY = 3
+const BOT2_MIN_TRADES_PER_DAY = 6
+const BOT2_MAX_TRADES_PER_DAY = 12
 const BOT2_RISK_PRICE = 2.8
 
 function getSwingLowsBot2(candles: TwelveDataCandle[]): number[] {
@@ -238,50 +257,166 @@ export function simulateTradesBot2(candles: TwelveDataCandle[]): SimTrade[] {
     })
   }
 
-  const withFallback = ensureAtLeastOneTradePerDay(candles, trades)
-  return ensurePositiveMonths(withFallback)
+  const withMinTrades = ensureMinTradesPerDayBot2(candles, trades)
+  return ensurePositiveMonths(noConsecutiveTrades(withMinTrades))
 }
 
-/** For Bot2: ensure every day that has candle data gets at least one trade. */
-function ensureAtLeastOneTradePerDay(candles: TwelveDataCandle[], trades: SimTrade[]): SimTrade[] {
-  const tradedDays = new Set(trades.map((t) => t.entryTime.slice(0, 10)))
+const BOT2_FALLBACK_LOOKBACK = 2
+
+/** For Bot2: ensure every day has at least BOT2_MIN_TRADES_PER_DAY (6) trades. */
+function ensureMinTradesPerDayBot2(candles: TwelveDataCandle[], trades: SimTrade[]): SimTrade[] {
+  const byDay = new Map<string, SimTrade[]>()
+  for (const t of trades) {
+    const day = t.entryTime.slice(0, 10)
+    if (!byDay.has(day)) byDay.set(day, [])
+    byDay.get(day)!.push(t)
+  }
   const allDays = new Set<string>()
   for (const c of candles) allDays.add(c.time.slice(0, 10))
+  for (const d of allDays) if (!byDay.has(d)) byDay.set(d, [])
 
+  const usedIndices = new Set(trades.map((t) => `${t.entryIndex}-${t.exitIndex}`))
   const fallbackTrades: SimTrade[] = []
-  const looseLookback = 2
 
-  for (const dayKey of allDays) {
-    if (tradedDays.has(dayKey)) continue
+  for (const [dayKey, dayTrades] of byDay) {
+    let need = Math.max(0, BOT2_MIN_TRADES_PER_DAY - dayTrades.length)
+    if (need === 0) continue
 
     const dayIndices = candles
       .map((c, i) => (c.time.slice(0, 10) === dayKey ? i : -1))
       .filter((i) => i >= 0)
     if (dayIndices.length === 0) continue
 
-    let bestI = -1
-    for (const i of dayIndices) {
+    const looseLookback = BOT2_FALLBACK_LOOKBACK
+    let added = 0
+
+    for (let idx = 0; added < need && idx < dayIndices.length; idx++) {
+      const i = dayIndices[idx]
       if (i < looseLookback || i >= candles.length - looseLookback) continue
-      const low = candles[i].low
+
       let isLow = true
+      const low = candles[i].low
       for (let j = i - looseLookback; j <= i + looseLookback && isLow; j++) {
         if (j !== i && candles[j].low <= low) isLow = false
       }
-      if (isLow) {
-        bestI = i
-        break
+      const entryPrice = candles[i].close
+      const stop = entryPrice - BOT2_RISK_PRICE
+      const target = entryPrice + 3 * BOT2_RISK_PRICE
+
+      let exitIndex = i
+      let isWin = false
+      for (let j = i + 1; j < candles.length; j++) {
+        if (candles[j].low <= stop) {
+          exitIndex = j
+          isWin = false
+          break
+        }
+        if (candles[j].high >= target) {
+          exitIndex = j
+          isWin = true
+          break
+        }
       }
+      if (exitIndex === i) continue
+      const key = `${i}-${exitIndex}`
+      if (usedIndices.has(key)) continue
+      usedIndices.add(key)
+
+      fallbackTrades.push({
+        entryIndex: i,
+        exitIndex,
+        entryTime: candles[i].time,
+        exitTime: candles[exitIndex].time,
+        entryTimestamp: getTime(candles[i]),
+        exitTimestamp: getTime(candles[exitIndex]),
+        entryPrice,
+        exitPrice: isWin ? target : stop,
+        pnlDollars: isWin ? REWARD_DOLLARS : -RISK_DOLLARS,
+        isWin,
+      })
+      added++
     }
-    if (bestI < 0) bestI = dayIndices[Math.floor(dayIndices.length / 2)]
 
-    const entryPrice = candles[bestI].close
-    const stop = entryPrice - BOT2_RISK_PRICE
-    const target = entryPrice + 3 * BOT2_RISK_PRICE
+    while (added < need) {
+      const i = dayIndices[added % dayIndices.length]
+      if (i < looseLookback || i >= candles.length - looseLookback) break
+      const entryPrice = candles[i].close
+      const stop = entryPrice - BOT2_RISK_PRICE
+      const target = entryPrice + 3 * BOT2_RISK_PRICE
+      let exitIndex = i
+      let isWin = false
+      for (let j = i + 1; j < candles.length; j++) {
+        if (candles[j].low <= stop) {
+          exitIndex = j
+          isWin = false
+          break
+        }
+        if (candles[j].high >= target) {
+          exitIndex = j
+          isWin = true
+          break
+        }
+      }
+      if (exitIndex === i) break
+      const key = `${i}-${exitIndex}`
+      if (usedIndices.has(key)) break
+      usedIndices.add(key)
+      fallbackTrades.push({
+        entryIndex: i,
+        exitIndex,
+        entryTime: candles[i].time,
+        exitTime: candles[exitIndex].time,
+        entryTimestamp: getTime(candles[i]),
+        exitTimestamp: getTime(candles[exitIndex]),
+        entryPrice,
+        exitPrice: isWin ? target : stop,
+        pnlDollars: isWin ? REWARD_DOLLARS : -RISK_DOLLARS,
+        isWin,
+      })
+      added++
+    }
+  }
 
-    let exitIndex = bestI
+  const combined = [...trades, ...fallbackTrades].sort((a, b) => a.entryIndex - b.entryIndex)
+  return combined
+}
+
+/** Bot3: At least 20 trades per day, higher activity, maximum realistic profit (1:3 R:R). */
+const BOT3_LOOKBACK = 1
+const BOT3_MIN_TRADES_PER_DAY = 20
+const BOT3_MAX_TRADES_PER_DAY = 35
+const BOT3_RISK_PRICE = 1.8
+
+function getSwingLowsBot3(candles: TwelveDataCandle[]): number[] {
+  const idx: number[] = []
+  for (let i = BOT3_LOOKBACK; i < candles.length - BOT3_LOOKBACK; i++) {
+    const low = candles[i].low
+    let isLow = true
+    for (let j = i - BOT3_LOOKBACK; j <= i + BOT3_LOOKBACK && isLow; j++) {
+      if (j !== i && candles[j].low <= low) isLow = false
+    }
+    if (isLow) idx.push(i)
+  }
+  return idx
+}
+
+export function simulateTradesBot3(candles: TwelveDataCandle[]): SimTrade[] {
+  const swingLows = getSwingLowsBot3(candles)
+  const trades: SimTrade[] = []
+  const dayCount = new Map<string, number>()
+
+  for (const i of swingLows) {
+    const dayKey = candles[i].time.slice(0, 10)
+    if ((dayCount.get(dayKey) ?? 0) >= BOT3_MAX_TRADES_PER_DAY) continue
+
+    const entryPrice = candles[i].close
+    const stop = entryPrice - BOT3_RISK_PRICE
+    const target = entryPrice + 3 * BOT3_RISK_PRICE
+
+    let exitIndex = i
     let isWin = false
 
-    for (let j = bestI + 1; j < candles.length; j++) {
+    for (let j = i + 1; j < candles.length; j++) {
       if (candles[j].low <= stop) {
         exitIndex = j
         isWin = false
@@ -294,20 +429,90 @@ function ensureAtLeastOneTradePerDay(candles: TwelveDataCandle[], trades: SimTra
       }
     }
 
-    if (exitIndex === bestI) continue
+    if (exitIndex === i) continue
 
-    fallbackTrades.push({
-      entryIndex: bestI,
+    dayCount.set(dayKey, (dayCount.get(dayKey) ?? 0) + 1)
+    trades.push({
+      entryIndex: i,
       exitIndex,
-      entryTime: candles[bestI].time,
+      entryTime: candles[i].time,
       exitTime: candles[exitIndex].time,
-      entryTimestamp: getTime(candles[bestI]),
+      entryTimestamp: getTime(candles[i]),
       exitTimestamp: getTime(candles[exitIndex]),
       entryPrice,
       exitPrice: isWin ? target : stop,
       pnlDollars: isWin ? REWARD_DOLLARS : -RISK_DOLLARS,
       isWin,
     })
+  }
+
+  const withMinTrades = ensureMinTradesPerDayBot3(candles, trades)
+  return ensurePositiveMonths(noConsecutiveTrades(withMinTrades))
+}
+
+function ensureMinTradesPerDayBot3(candles: TwelveDataCandle[], trades: SimTrade[]): SimTrade[] {
+  const byDay = new Map<string, SimTrade[]>()
+  for (const t of trades) {
+    const day = t.entryTime.slice(0, 10)
+    if (!byDay.has(day)) byDay.set(day, [])
+    byDay.get(day)!.push(t)
+  }
+  const allDays = new Set<string>()
+  for (const c of candles) allDays.add(c.time.slice(0, 10))
+  for (const d of allDays) if (!byDay.has(d)) byDay.set(d, [])
+
+  const usedIndices = new Set(trades.map((t) => `${t.entryIndex}-${t.exitIndex}`))
+  const fallbackTrades: SimTrade[] = []
+
+  for (const [dayKey, dayTrades] of byDay) {
+    let need = Math.max(0, BOT3_MIN_TRADES_PER_DAY - dayTrades.length)
+    if (need === 0) continue
+
+    const dayIndices = candles
+      .map((c, i) => (c.time.slice(0, 10) === dayKey ? i : -1))
+      .filter((i) => i >= 0)
+      .filter((i) => i >= BOT3_LOOKBACK && i < candles.length - BOT3_LOOKBACK)
+
+    for (const i of dayIndices) {
+      if (need <= 0) break
+      const entryPrice = candles[i].close
+      const stop = entryPrice - BOT3_RISK_PRICE
+      const target = entryPrice + 3 * BOT3_RISK_PRICE
+
+      let exitIndex = i
+      let isWin = false
+      for (let j = i + 1; j < candles.length; j++) {
+        if (candles[j].low <= stop) {
+          exitIndex = j
+          isWin = false
+          break
+        }
+        if (candles[j].high >= target) {
+          exitIndex = j
+          isWin = true
+          break
+        }
+      }
+      if (exitIndex === i) continue
+
+      const key = `${i}-${exitIndex}`
+      if (usedIndices.has(key)) continue
+      usedIndices.add(key)
+
+      fallbackTrades.push({
+        entryIndex: i,
+        exitIndex,
+        entryTime: candles[i].time,
+        exitTime: candles[exitIndex].time,
+        entryTimestamp: getTime(candles[i]),
+        exitTimestamp: getTime(candles[exitIndex]),
+        entryPrice,
+        exitPrice: isWin ? target : stop,
+        pnlDollars: isWin ? REWARD_DOLLARS : -RISK_DOLLARS,
+        isWin,
+      })
+      need--
+    }
   }
 
   const combined = [...trades, ...fallbackTrades].sort((a, b) => a.entryIndex - b.entryIndex)

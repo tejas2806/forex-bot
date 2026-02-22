@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatPrice } from "@/lib/utils"
 import { XauUsdCsvChart } from "@/components/analytics/XauUsdCsvChart"
 import { Bot2PerformanceChart } from "@/components/analytics/Bot2PerformanceChart"
+import { Bot3PerformanceChart } from "@/components/analytics/Bot3PerformanceChart"
 
 export function AdminDashboard() {
   const products = useProductsStore((s) => s.products)
@@ -206,6 +207,8 @@ export function AdminDashboard() {
       <XauUsdCsvChart />
 
       <Bot2PerformanceChart />
+
+      <Bot3PerformanceChart />
     </div>
   )
 }
