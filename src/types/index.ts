@@ -9,6 +9,8 @@ export interface Product {
   categoryId: string
   inStock: boolean
   featured?: boolean
+  /** Which performance chart to show when "Check performance" is clicked: "1" = Bot1, "2" = Bot2 */
+  performanceBot?: "1" | "2"
 }
 
 export interface Category {

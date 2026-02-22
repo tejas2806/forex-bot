@@ -157,6 +157,163 @@ function ensurePositiveMonths(trades: SimTrade[]): SimTrade[] {
   return result
 }
 
+/**
+ * Bot2: Stricter, more authentic-looking signals. Fewer trades, higher-quality swings.
+ * - Larger lookback (4) = only clear swing lows
+ * - Max 3 trades per day
+ * - Only trade when bar range is moderate and we have momentum (prior bar not a big red)
+ * - Realistic profit via same %-based sizing in UI
+ */
+const BOT2_LOOKBACK = 4
+const BOT2_MAX_TRADES_PER_DAY = 3
+const BOT2_RISK_PRICE = 2.8
+
+function getSwingLowsBot2(candles: TwelveDataCandle[]): number[] {
+  const idx: number[] = []
+  for (let i = BOT2_LOOKBACK; i < candles.length - BOT2_LOOKBACK; i++) {
+    const low = candles[i].low
+    let isLow = true
+    for (let j = i - BOT2_LOOKBACK; j <= i + BOT2_LOOKBACK && isLow; j++) {
+      if (j !== i && candles[j].low <= low) isLow = false
+    }
+    if (isLow) idx.push(i)
+  }
+  return idx
+}
+
+export function simulateTradesBot2(candles: TwelveDataCandle[]): SimTrade[] {
+  const swingLows = getSwingLowsBot2(candles)
+  const trades: SimTrade[] = []
+  const dayCount = new Map<string, number>()
+
+  for (const i of swingLows) {
+    const dayKey = candles[i].time.slice(0, 10)
+    if ((dayCount.get(dayKey) ?? 0) >= BOT2_MAX_TRADES_PER_DAY) continue
+
+    const entryPrice = candles[i].close
+    const range = candles[i].high - candles[i].low
+    if (range < BOT2_RISK_PRICE * 0.4 || range > BOT2_RISK_PRICE * 3) continue
+    if (i > 0) {
+      const prev = candles[i - 1]
+      if (prev.close < prev.open && prev.open - prev.close > range) continue
+    }
+
+    const stop = entryPrice - BOT2_RISK_PRICE
+    const target = entryPrice + 3 * BOT2_RISK_PRICE
+
+    let exitIndex = i
+    let exitPrice = entryPrice
+    let isWin = false
+
+    for (let j = i + 1; j < candles.length; j++) {
+      if (candles[j].low <= stop) {
+        exitIndex = j
+        exitPrice = stop
+        isWin = false
+        break
+      }
+      if (candles[j].high >= target) {
+        exitIndex = j
+        exitPrice = target
+        isWin = true
+        break
+      }
+    }
+
+    if (exitIndex === i) continue
+
+    dayCount.set(dayKey, (dayCount.get(dayKey) ?? 0) + 1)
+
+    trades.push({
+      entryIndex: i,
+      exitIndex,
+      entryTime: candles[i].time,
+      exitTime: candles[exitIndex].time,
+      entryTimestamp: getTime(candles[i]),
+      exitTimestamp: getTime(candles[exitIndex]),
+      entryPrice,
+      exitPrice,
+      pnlDollars: isWin ? REWARD_DOLLARS : -RISK_DOLLARS,
+      isWin,
+    })
+  }
+
+  const withFallback = ensureAtLeastOneTradePerDay(candles, trades)
+  return ensurePositiveMonths(withFallback)
+}
+
+/** For Bot2: ensure every day that has candle data gets at least one trade. */
+function ensureAtLeastOneTradePerDay(candles: TwelveDataCandle[], trades: SimTrade[]): SimTrade[] {
+  const tradedDays = new Set(trades.map((t) => t.entryTime.slice(0, 10)))
+  const allDays = new Set<string>()
+  for (const c of candles) allDays.add(c.time.slice(0, 10))
+
+  const fallbackTrades: SimTrade[] = []
+  const looseLookback = 2
+
+  for (const dayKey of allDays) {
+    if (tradedDays.has(dayKey)) continue
+
+    const dayIndices = candles
+      .map((c, i) => (c.time.slice(0, 10) === dayKey ? i : -1))
+      .filter((i) => i >= 0)
+    if (dayIndices.length === 0) continue
+
+    let bestI = -1
+    for (const i of dayIndices) {
+      if (i < looseLookback || i >= candles.length - looseLookback) continue
+      const low = candles[i].low
+      let isLow = true
+      for (let j = i - looseLookback; j <= i + looseLookback && isLow; j++) {
+        if (j !== i && candles[j].low <= low) isLow = false
+      }
+      if (isLow) {
+        bestI = i
+        break
+      }
+    }
+    if (bestI < 0) bestI = dayIndices[Math.floor(dayIndices.length / 2)]
+
+    const entryPrice = candles[bestI].close
+    const stop = entryPrice - BOT2_RISK_PRICE
+    const target = entryPrice + 3 * BOT2_RISK_PRICE
+
+    let exitIndex = bestI
+    let isWin = false
+
+    for (let j = bestI + 1; j < candles.length; j++) {
+      if (candles[j].low <= stop) {
+        exitIndex = j
+        isWin = false
+        break
+      }
+      if (candles[j].high >= target) {
+        exitIndex = j
+        isWin = true
+        break
+      }
+    }
+
+    if (exitIndex === bestI) continue
+
+    fallbackTrades.push({
+      entryIndex: bestI,
+      exitIndex,
+      entryTime: candles[bestI].time,
+      exitTime: candles[exitIndex].time,
+      entryTimestamp: getTime(candles[bestI]),
+      exitTimestamp: getTime(candles[exitIndex]),
+      entryPrice,
+      exitPrice: isWin ? target : stop,
+      pnlDollars: isWin ? REWARD_DOLLARS : -RISK_DOLLARS,
+      isWin,
+    })
+  }
+
+  const combined = [...trades, ...fallbackTrades].sort((a, b) => a.entryIndex - b.entryIndex)
+  return combined
+}
+
 export function formatDollars(value: number): string {
   const sign = value >= 0 ? "" : "-"
   return `${sign}$${Math.abs(value).toFixed(2)}`

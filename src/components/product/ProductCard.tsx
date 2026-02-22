@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom"
-import { ShoppingCart } from "lucide-react"
+import { ShoppingCart, LineChart } from "lucide-react"
 import type { Product } from "@/types"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -41,19 +41,27 @@ export function ProductCard({ product }: ProductCardProps) {
           {formatPrice(product.price)}
         </p>
       </CardContent>
-      <CardFooter className="p-4 pt-0 flex gap-2">
-        <Button
-          className="flex-1"
-          size="sm"
-          onClick={(e) => {
-            e.preventDefault()
-            addItem(product)
-          }}
-          disabled={!product.inStock}
-        >
-          <ShoppingCart className="h-4 w-4 mr-1" />
-          Add to cart
-        </Button>
+      <CardFooter className="p-4 pt-0 flex flex-col gap-2">
+        <div className="flex gap-2">
+          <Button
+            className="flex-1"
+            size="sm"
+            onClick={(e) => {
+              e.preventDefault()
+              addItem(product)
+            }}
+            disabled={!product.inStock}
+          >
+            <ShoppingCart className="h-4 w-4 mr-1" />
+            Add to cart
+          </Button>
+          <Button variant="outline" size="sm" asChild>
+            <Link to={product.performanceBot === "2" || product.id === "2" ? "/performance/2" : product.performanceBot === "1" || product.id === "1" ? "/performance/1" : "/performance"}>
+              <LineChart className="h-4 w-4 mr-1" />
+              Check performance
+            </Link>
+          </Button>
+        </div>
       </CardFooter>
     </Card>
   )

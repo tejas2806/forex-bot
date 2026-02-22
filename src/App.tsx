@@ -9,6 +9,7 @@ import { Checkout } from "@/pages/Checkout"
 import { Login } from "@/pages/Login"
 import { Register } from "@/pages/Register"
 import { AccountOrders } from "@/pages/AccountOrders"
+import { Performance } from "@/pages/Performance"
 import { AdminDashboard } from "@/pages/admin/AdminDashboard"
 import { AdminProducts } from "@/pages/admin/AdminProducts"
 import { AdminOrders } from "@/pages/admin/AdminOrders"
@@ -27,6 +28,8 @@ function App() {
           <Route path="login" element={<Login />} />
           <Route path="register" element={<Register />} />
           <Route path="account/orders" element={<AccountOrders />} />
+          <Route path="performance" element={<Performance />} />
+          <Route path="performance/:botId" element={<Performance />} />
         </Route>
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<AdminDashboard />} />

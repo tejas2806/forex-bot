@@ -4,7 +4,7 @@ import type { CandlestickData, Time, UTCTimestamp } from "lightweight-charts"
 import type { SeriesMarker } from "lightweight-charts"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { parseCSVToCandles, type TwelveDataCandle } from "@/lib/twelvedata"
-import { simulateTrades, formatDollars } from "@/lib/swingStrategy"
+import { simulateTradesBot2, formatDollars } from "@/lib/swingStrategy"
 import { CalendarDays } from "lucide-react"
 
 const CSV_URLS = {
@@ -14,7 +14,7 @@ const CSV_URLS = {
 
 type Timeframe = "5min" | "15min"
 
-export function XauUsdCsvChart() {
+export function Bot2PerformanceChart() {
   const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().slice(0, 10))
   const [timeframe, setTimeframe] = useState<Timeframe>("15min")
   const [candles, setCandles] = useState<TwelveDataCandle[]>([])
@@ -46,7 +46,7 @@ export function XauUsdCsvChart() {
 
   const filteredCandles = candles.filter((c) => c.time.slice(0, 10) === selectedDate)
 
-  const allTrades = useMemo(() => (candles.length > 0 ? simulateTrades(candles) : []), [candles])
+  const allTrades = useMemo(() => (candles.length > 0 ? simulateTradesBot2(candles) : []), [candles])
   const dayTrades = useMemo(
     () => allTrades.filter((t) => t.entryTime.slice(0, 10) === selectedDate),
     [allTrades, selectedDate]
@@ -58,7 +58,7 @@ export function XauUsdCsvChart() {
   )
 
   const INITIAL_INVESTMENT = 1000
-  const RISK_PCT_PER_TRADE = 0.0005 // 0.05% of balance at risk per trade (1:3 R:R) for realistic growth
+  const RISK_PCT_PER_TRADE = 0.0004 // 0.04% per trade for Bot2 – conservative, realistic growth
 
   const performance = useMemo(() => {
     let balance = INITIAL_INVESTMENT
@@ -249,7 +249,7 @@ export function XauUsdCsvChart() {
     <Card className="border-zinc-800 bg-zinc-900/70">
       <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <CardTitle className="text-base font-semibold text-zinc-100">
-          Bot1 performance
+          Bot2 performance
         </CardTitle>
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-1.5 rounded border border-zinc-700 bg-zinc-900/80 px-2 py-1.5">

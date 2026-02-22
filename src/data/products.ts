@@ -24,6 +24,7 @@ export const products: Product[] = [
     categoryId: "1",
     inStock: true,
     featured: true,
+    performanceBot: "1",
   },
   {
     id: "2",
@@ -36,6 +37,7 @@ export const products: Product[] = [
     categoryId: "1",
     inStock: true,
     featured: true,
+    performanceBot: "2",
   },
   {
     id: "3",
