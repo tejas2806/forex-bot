@@ -4,6 +4,7 @@ import { useProductsStore } from "@/stores/products-store"
 import { useOrdersStore } from "@/stores/orders-store"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatPrice } from "@/lib/utils"
+import { XauUsdCsvChart } from "@/components/analytics/XauUsdCsvChart"
 
 export function AdminDashboard() {
   const products = useProductsStore((s) => s.products)
@@ -16,7 +17,14 @@ export function AdminDashboard() {
   const completedOrders = orders.filter((o) => o.status === "delivered").length
   const pendingOrders = orders.filter((o) => o.status === "pending" || o.status === "paid").length
 
-  const stats = [
+  const stats: {
+    label: string
+    value: string | number
+    icon: React.ComponentType<any>
+    helper: string
+    tone: "neutral" | "warn" | "success"
+    link?: string
+  }[] = [
     {
       label: "Total products",
       value: products.length,
@@ -40,7 +48,7 @@ export function AdminDashboard() {
       helper: "Demo data only",
       tone: "success",
     },
-  ] as const
+  ]
 
   return (
     <div className="space-y-8">
@@ -193,6 +201,8 @@ export function AdminDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      <XauUsdCsvChart />
     </div>
   )
 }
