@@ -1,49 +1,225 @@
 import { Link } from "react-router-dom"
-import { ArrowRight } from "lucide-react"
+import { useEffect, useRef, useState } from "react"
+import { ArrowRight, Bot, ShieldCheck, TrendingUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Separator } from "@/components/ui/separator"
 import { ProductCard } from "@/components/product/ProductCard"
+import { ProductCardSkeleton } from "@/components/product/ProductCardSkeleton"
+import { HeroCandlestickAnimation } from "@/components/analytics/HeroCandlestickAnimation"
 import { useProductsStore } from "@/stores/products-store"
+import goldCoin from "@/assets/dollar-gold-coin.png"
 
 export function Home() {
   const products = useProductsStore((s) => s.products)
+  const productsLoaded = useProductsStore((s) => s.productsLoaded)
   const featured = products.filter((p) => p.featured).slice(0, 4)
+  const featuredSectionRef = useRef<HTMLDivElement | null>(null)
+  const [showFeaturedMotion, setShowFeaturedMotion] = useState(false)
+
+  useEffect(() => {
+    const node = featuredSectionRef.current
+    if (!node) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setShowFeaturedMotion(true)
+          observer.disconnect()
+        }
+      },
+      { threshold: 0.2 }
+    )
+
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [])
 
   return (
     <div>
-      <section className="relative overflow-hidden border-b border-zinc-800">
-        <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-transparent to-transparent" />
-        <div className="container relative mx-auto px-4 py-24 md:py-32">
-          <h1 className="font-display text-4xl md:text-6xl font-bold text-zinc-100 max-w-2xl">
-            Forex trading, <span className="text-orange-500">automated</span>
-          </h1>
-          <p className="mt-6 text-lg text-zinc-400 max-w-xl">
-            Professional trading bots, indicators, and signal services for serious forex traders. Automate your edge and scale your results.
-          </p>
-          <div className="mt-10 flex flex-wrap gap-4">
-            <Button size="lg" asChild>
-              <Link to="/shop">
-                Browse products <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-            <Button size="lg" variant="outline" asChild>
-              <Link to="/shop?featured=1">Featured bots & signals</Link>
-            </Button>
+      <section className="relative overflow-hidden border-b border-zinc-800 bg-gradient-to-b from-zinc-900 via-void to-void">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_22%_30%,rgba(249,115,22,0.20),transparent_48%),radial-gradient(circle_at_72%_38%,rgba(56,189,248,0.14),transparent_45%)]" />
+        <div className="container relative mx-auto px-4 py-20 md:py-28">
+          <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_560px] lg:gap-14">
+            <div className="max-w-2xl">
+              <Badge variant="secondary" className="mb-5">
+                Trusted by active traders worldwide
+              </Badge>
+              <h1 className="font-display text-4xl md:text-6xl font-bold leading-tight text-zinc-100">
+                Leading Forex Bot <br />
+                Platform for the{" "}
+                <span className="text-orange-500">modern trader</span>
+              </h1>
+              <p className="mt-5 text-lg text-zinc-400">
+                Professional trading bots, indicators, and real-time signal workflows built to scale consistency and reduce emotion in execution.
+              </p>
+
+              <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 px-4 py-3">
+                  <p className="font-display text-2xl font-semibold text-zinc-100">60B+</p>
+                  <p className="text-xs text-zinc-500">Monthly trading volume</p>
+                </div>
+                <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 px-4 py-3">
+                  <p className="font-display text-2xl font-semibold text-zinc-100">6 Years</p>
+                  <p className="text-xs text-zinc-500">Strategy research cycle</p>
+                </div>
+                <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 px-4 py-3">
+                  <p className="font-display text-2xl font-semibold text-zinc-100">5M+</p>
+                  <p className="text-xs text-zinc-500">Signal events processed</p>
+                </div>
+              </div>
+
+              <div className="mt-8">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="h-14 w-full max-w-md rounded-full border-orange-500 text-lg text-orange-500 hover:bg-orange-500/10"
+                  asChild
+                >
+                  <Link to="/login">
+                    <span className="inline-flex items-center justify-center gap-2 whitespace-nowrap">
+                      Continue with Google <ArrowRight className="h-5 w-5" />
+                    </span>
+                  </Link>
+                </Button>
+              </div>
+              <p className="mt-3 text-sm text-zinc-300">
+                Sign Up and Claim up to 10,000 USDT in Rewards
+              </p>
+            </div>
+
+            <div className="relative hidden lg:block">
+              <div className="absolute -inset-3 rounded-3xl bg-orange-500/15 blur-3xl" />
+              <div className="relative space-y-4">
+                <div className="rounded-2xl border border-zinc-800/70 bg-transparent p-4">
+                  <div className="flex justify-center">
+                    <div className="hero-coin-drop">
+                      <div className="hero-coin-flip">
+                        <img
+                          src={goldCoin}
+                          alt="Gold coin showing trading value"
+                          className="h-44 w-44 object-contain drop-shadow-[0_20px_24px_rgba(249,115,22,0.34)]"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="rounded-2xl border border-zinc-800/70 bg-transparent p-4">
+                  <HeroCandlestickAnimation />
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="mt-8 lg:hidden">
+            <HeroCandlestickAnimation />
+          </div>
+
+          <div className="mt-12 grid gap-4 md:grid-cols-3">
+            <Card className="group relative overflow-hidden bg-zinc-900/40 transition-all duration-300 hover:-translate-y-1 hover:border-orange-500/50 hover:shadow-[0_14px_40px_rgba(249,115,22,0.18)]">
+              <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 bg-gradient-to-br from-orange-500/12 via-transparent to-transparent" />
+              <CardHeader className="pb-3">
+                <CardTitle className="relative flex items-center gap-2 text-base transition-colors duration-300 group-hover:text-orange-300">
+                  <Bot className="h-4 w-4 text-orange-500 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:scale-110" />
+                  Automated execution
+                </CardTitle>
+                <CardDescription className="relative transition-colors duration-300 group-hover:text-zinc-300">
+                  Deploy battle-tested strategy bots with minimal setup.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+            <Card className="group relative overflow-hidden bg-zinc-900/40 transition-all duration-300 hover:-translate-y-1 hover:border-orange-500/50 hover:shadow-[0_14px_40px_rgba(249,115,22,0.18)]">
+              <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 bg-gradient-to-br from-orange-500/12 via-transparent to-transparent" />
+              <CardHeader className="pb-3">
+                <CardTitle className="relative flex items-center gap-2 text-base transition-colors duration-300 group-hover:text-orange-300">
+                  <TrendingUp className="h-4 w-4 text-orange-500 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:scale-110" />
+                  Transparent results
+                </CardTitle>
+                <CardDescription className="relative transition-colors duration-300 group-hover:text-zinc-300">
+                  Validate strategy behavior with performance-focused analytics.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+            <Card className="group relative overflow-hidden bg-zinc-900/40 transition-all duration-300 hover:-translate-y-1 hover:border-orange-500/50 hover:shadow-[0_14px_40px_rgba(249,115,22,0.18)]">
+              <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 bg-gradient-to-br from-orange-500/12 via-transparent to-transparent" />
+              <CardHeader className="pb-3">
+                <CardTitle className="relative flex items-center gap-2 text-base transition-colors duration-300 group-hover:text-orange-300">
+                  <ShieldCheck className="h-4 w-4 text-orange-500 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:scale-110" />
+                  Risk-aware tooling
+                </CardTitle>
+                <CardDescription className="relative transition-colors duration-300 group-hover:text-zinc-300">
+                  Use disciplined configurations made for serious capital protection.
+                </CardDescription>
+              </CardHeader>
+            </Card>
           </div>
         </div>
       </section>
 
       <section className="container mx-auto px-4 py-16">
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="font-display text-2xl font-semibold text-zinc-100">Featured bots & products</h2>
-          <Button variant="ghost" asChild>
-            <Link to="/shop?featured=1">View all</Link>
-          </Button>
+        <div className="p-0">
+          <div ref={featuredSectionRef} className="relative mb-8 flex items-center justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Top performing strategies</p>
+              <h2 className="mt-1 font-display text-2xl font-semibold text-zinc-100">Featured bots & products</h2>
+            </div>
+            <Button variant="ghost" asChild>
+              <Link to="/shop?featured=1">View all</Link>
+            </Button>
+          </div>
+          {!productsLoaded ? (
+            <div className="relative grid grid-cols-1 justify-items-center gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <div key={index} className="w-full max-w-sm">
+                  <ProductCardSkeleton />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="relative grid grid-cols-1 justify-items-center gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {featured.map((product, index) => (
+                <div
+                  key={product.id}
+                  className={`group w-full max-w-sm featured-card-reveal ${
+                    showFeaturedMotion ? "featured-card-reveal-visible" : ""
+                  }`}
+                  style={{ transitionDelay: `${index * 150}ms` }}
+                >
+                  <div className="pointer-events-none absolute inset-0 -z-10 opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100 bg-gradient-to-br from-orange-500/20 to-cyan-500/10" />
+                  <div className="featured-card-shine">
+                    <ProductCard product={product} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {featured.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
+      </section>
+
+      <section className="container mx-auto px-4 pb-16">
+        <Card>
+          <CardHeader>
+            <CardTitle>Why teams pick AlphaForge</CardTitle>
+            <CardDescription>
+              Built for traders who want execution consistency, measurable outcomes, and clean workflows.
+            </CardDescription>
+          </CardHeader>
+          <Separator />
+          <CardContent className="grid gap-4 pt-6 md:grid-cols-3">
+            <div>
+              <p className="text-2xl font-display font-semibold text-orange-500">24/7</p>
+              <p className="text-sm text-zinc-400 mt-1">Automated market monitoring and execution support.</p>
+            </div>
+            <div>
+              <p className="text-2xl font-display font-semibold text-orange-500">Multi-product</p>
+              <p className="text-sm text-zinc-400 mt-1">Bots, signals, and education in one organized stack.</p>
+            </div>
+            <div>
+              <p className="text-2xl font-display font-semibold text-orange-500">Actionable data</p>
+              <p className="text-sm text-zinc-400 mt-1">Performance analytics that guide practical decisions.</p>
+            </div>
+          </CardContent>
+        </Card>
       </section>
     </div>
   )

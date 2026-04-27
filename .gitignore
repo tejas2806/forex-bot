@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+forex-bot-3a379-firebase-adminsdk-fbsvc-77bc933e4a.json
+razorpay_test_api_keys_1777297396800.csv
+functions/.env

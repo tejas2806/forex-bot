@@ -39,8 +39,8 @@ export function AdminLayout() {
         </nav>
         <div className="absolute bottom-4 left-4 right-4">
           <Button variant="outline" size="sm" asChild className="w-full">
-            <Link to="/">
-              <ArrowLeft className="h-4 w-4 mr-2" />
+            <Link to="/" className="inline-flex items-center justify-center whitespace-nowrap">
+              <ArrowLeft className="mr-2 h-4 w-4 shrink-0" />
               Back to site
             </Link>
           </Button>
