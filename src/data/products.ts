@@ -15,13 +15,19 @@ export const products: Product[] = [
     slug: "aegis-fx",
     description:
       "Adaptive forex trading bot built for stable execution with dynamic risk controls and disciplined entries.",
-    price: 349,
+    price: 899,
     image: chartImg,
     category: "Trading Bots",
     categoryId: "1",
     inStock: true,
     featured: true,
     performanceBot: "1",
+    plans: [
+      { id: "3m", label: "3 Months", months: 3, price: 349 },
+      { id: "6m", label: "6 Months", months: 6, price: 549 },
+      { id: "12m", label: "12 Months", months: 12, price: 749 },
+      { id: "lifetime", label: "Lifetime", months: null, price: 899 },
+    ],
   },
   {
     id: "velocity-alpha",
@@ -29,13 +35,19 @@ export const products: Product[] = [
     slug: "velocity-alpha",
     description:
       "Momentum-focused trading bot designed for faster trend capture with configurable filters and position sizing.",
-    price: 399,
+    price: 949,
     image: screenImg,
     category: "Trading Bots",
     categoryId: "1",
     inStock: true,
     featured: true,
     performanceBot: "2",
+    plans: [
+      { id: "3m", label: "3 Months", months: 3, price: 399 },
+      { id: "6m", label: "6 Months", months: 6, price: 599 },
+      { id: "12m", label: "12 Months", months: 12, price: 799 },
+      { id: "lifetime", label: "Lifetime", months: null, price: 949 },
+    ],
   },
   {
     id: "kinetic-nexus",
@@ -43,12 +55,18 @@ export const products: Product[] = [
     slug: "kinetic-nexus",
     description:
       "High-activity algorithmic bot tuned for intraday volatility with smart scaling and multi-session coverage.",
-    price: 449,
+    price: 999,
     image: tradeImg,
     category: "Trading Bots",
     categoryId: "1",
     inStock: true,
     featured: true,
     performanceBot: "3",
+    plans: [
+      { id: "3m", label: "3 Months", months: 3, price: 449 },
+      { id: "6m", label: "6 Months", months: 6, price: 649 },
+      { id: "12m", label: "12 Months", months: 12, price: 849 },
+      { id: "lifetime", label: "Lifetime", months: null, price: 999 },
+    ],
   },
 ]

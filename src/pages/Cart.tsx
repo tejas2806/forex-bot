@@ -5,7 +5,7 @@ import { useCartStore } from "@/stores/cart-store"
 import { formatPrice } from "@/lib/utils"
 
 export function Cart() {
-  const { items, updateQuantity, removeItem, totalPrice, totalItems } = useCartStore()
+  const { items, updateQuantity, removeItem, updateItemPlan, totalPrice, totalItems } = useCartStore()
 
   if (items.length === 0) {
     return (
@@ -25,9 +25,12 @@ export function Cart() {
 
       <div className="grid lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-4">
-          {items.map(({ product, quantity }) => (
+          {items.map(({ id, product, quantity, planId, planLabel, unitPrice }) => {
+            const price = unitPrice ?? product.price
+            const itemId = id ?? `${product.id}:${planId ?? "base"}`
+            return (
             <div
-              key={product.id}
+              key={itemId}
               className="flex gap-4 rounded-xl border border-zinc-800 bg-card p-4"
             >
               <img
@@ -42,13 +45,32 @@ export function Cart() {
                 >
                   {product.name}
                 </Link>
-                <p className="text-orange-500 font-medium mt-1">{formatPrice(product.price)}</p>
+                <p className="text-orange-500 font-medium mt-1">{formatPrice(price)}</p>
+                {planLabel && (
+                  <p className="text-xs text-zinc-500 mt-0.5">Plan: {planLabel}</p>
+                )}
+                {product.plans?.length ? (
+                  <div className="mt-2 w-full max-w-xs">
+                    <label className="text-[11px] uppercase tracking-wide text-zinc-500">Subscription plan</label>
+                    <select
+                      value={planId ?? "lifetime"}
+                      onChange={(e) => updateItemPlan(itemId, e.target.value as "3m" | "6m" | "12m" | "lifetime")}
+                      className="mt-1 h-9 w-full rounded-lg border border-zinc-700 bg-zinc-900/60 px-2 text-sm text-zinc-200"
+                    >
+                      {product.plans.map((plan) => (
+                        <option key={plan.id} value={plan.id}>
+                          {plan.label} - {formatPrice(plan.price)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : null}
                 <div className="flex items-center gap-2 mt-2">
                   <Button
                     variant="outline"
                     size="icon"
                     className="h-8 w-8"
-                    onClick={() => updateQuantity(product.id, quantity - 1)}
+                    onClick={() => updateQuantity(itemId, quantity - 1)}
                   >
                     <Minus className="h-3 w-3" />
                   </Button>
@@ -57,7 +79,7 @@ export function Cart() {
                     variant="outline"
                     size="icon"
                     className="h-8 w-8"
-                    onClick={() => updateQuantity(product.id, quantity + 1)}
+                    onClick={() => updateQuantity(itemId, quantity + 1)}
                   >
                     <Plus className="h-3 w-3" />
                   </Button>
@@ -65,17 +87,18 @@ export function Cart() {
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8 text-red-400 hover:text-red-300 ml-2"
-                    onClick={() => removeItem(product.id)}
+                    onClick={() => removeItem(itemId)}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
               <p className="font-medium text-zinc-100 shrink-0">
-                {formatPrice(product.price * quantity)}
+                {formatPrice(price * quantity)}
               </p>
             </div>
-          ))}
+            )
+          })}
         </div>
 
         <div className="lg:col-span-1">

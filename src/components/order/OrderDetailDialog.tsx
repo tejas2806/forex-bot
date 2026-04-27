@@ -188,9 +188,10 @@ export function OrderDetailDialog({
                   <li key={idx} className="flex justify-between gap-2 text-zinc-300">
                     <span>
                       {item.product.name} × {item.quantity}
+                      {item.planLabel ? ` · ${item.planLabel}` : ""}
                     </span>
                     <span className="shrink-0">
-                      {formatPrice(item.product.price * item.quantity)}
+                      {formatPrice((item.unitPrice ?? item.product.price) * item.quantity)}
                     </span>
                   </li>
                 ))}

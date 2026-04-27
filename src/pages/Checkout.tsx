@@ -167,7 +167,12 @@ export function Checkout() {
               <h3 className="font-display text-lg font-semibold text-zinc-100">Order summary</h3>
               <p className="text-zinc-500 mt-1">{items.length} item(s)</p>
               <p className="mt-4 text-2xl font-bold text-zinc-100">{formatPrice(totalPrice())}</p>
-              <Button type="submit" className="w-full mt-6" size="lg" disabled={processing}>
+              <Button
+                type="submit"
+                className="mt-6 w-full bg-orange-500 text-white hover:bg-orange-600"
+                size="lg"
+                disabled={processing}
+              >
                 {processing ? "Processing…" : `Pay ${formatPrice(totalPrice())}`}
               </Button>
             </div>

@@ -1,3 +1,12 @@
+export type ProductPlanId = "3m" | "6m" | "12m" | "lifetime"
+
+export interface ProductPlan {
+  id: ProductPlanId
+  label: string
+  months: number | null
+  price: number
+}
+
 export interface Product {
   id: string
   name: string
@@ -11,6 +20,7 @@ export interface Product {
   featured?: boolean
   /** Which performance chart to show when "Check performance" is clicked: "1" = Bot1, "2" = Bot2, "3" = Bot3 */
   performanceBot?: "1" | "2" | "3"
+  plans?: ProductPlan[]
 }
 
 export interface Category {
@@ -29,8 +39,12 @@ export interface User {
 }
 
 export interface CartItem {
+  id: string
   product: Product
   quantity: number
+  planId?: ProductPlanId
+  planLabel?: string
+  unitPrice: number
 }
 
 export type PaymentMethod = "card" | "paypal" | "cod"

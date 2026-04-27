@@ -200,10 +200,11 @@ export function AdminOrders() {
                   {selectedOrder.items.map((item, index) => (
                     <li key={`${item.product.id}-${index}`} className="flex items-center justify-between gap-2">
                       <span className="text-zinc-200">
-                        {item.product.name} x{item.quantity}
+                              {item.product.name} x{item.quantity}
+                              {item.planLabel ? ` · ${item.planLabel}` : ""}
                       </span>
                       <span className="text-zinc-400">
-                        {formatPrice(item.product.price * item.quantity)}
+                              {formatPrice((item.unitPrice ?? item.product.price) * item.quantity)}
                       </span>
                     </li>
                   ))}

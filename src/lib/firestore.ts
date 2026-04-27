@@ -575,6 +575,7 @@ export async function createLicensesForOrder(adminEmail: string, order: Order): 
   const userId = order.userId
 
   for (const item of order.items) {
+    const expiresAt = calculateLicenseExpiry(order.createdAt, item.planId)
     for (let qty = 0; qty < item.quantity; qty++) {
       const license: Omit<License, "id"> = {
         licenseKey: generateLicenseKey(),
@@ -586,12 +587,33 @@ export async function createLicensesForOrder(adminEmail: string, order: Order): 
         orderId: order.id,
         status: "active",
         createdAt: now,
+        ...(expiresAt ? { expiresAt } : {}),
       }
       const saved = await createLicense(adminEmail, userEmail, order.id, license)
       created.push(saved)
     }
   }
   return created
+}
+
+function calculateLicenseExpiry(
+  createdAtIso: string,
+  planId?: string
+): string | undefined {
+  const monthsByPlan: Record<string, number> = {
+    "3m": 3,
+    "6m": 6,
+    "12m": 12,
+  }
+
+  if (!planId || !monthsByPlan[planId]) return undefined
+
+  const base = new Date(createdAtIso)
+  if (Number.isNaN(base.getTime())) return undefined
+
+  const expiry = new Date(base)
+  expiry.setMonth(expiry.getMonth() + monthsByPlan[planId])
+  return expiry.toISOString()
 }
 
 export async function getLicensesByUser(adminEmail: string, userId: string): Promise<License[]> {
@@ -806,5 +828,6 @@ function productToFirestore(p: Product | (Omit<Product, "id"> & { slug: string }
     inStock: p.inStock,
     ...("featured" in p && p.featured != null && { featured: p.featured }),
     ...("performanceBot" in p && p.performanceBot != null && { performanceBot: p.performanceBot }),
+    ...("plans" in p && p.plans != null && { plans: p.plans }),
   }
 }

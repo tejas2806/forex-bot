@@ -17,6 +17,37 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import type { Product } from "@/types"
 
+const DEFAULT_PLAN_PRICES = {
+  "3m": 349,
+  "6m": 549,
+  "12m": 749,
+  lifetime: 899,
+}
+
+function buildPlansFromForm(form: {
+  plan3m: string
+  plan6m: string
+  plan12m: string
+  planLifetime: string
+}) {
+  const parse = (value: string, fallback: number) => {
+    const n = Number(value)
+    return Number.isFinite(n) && n > 0 ? n : fallback
+  }
+
+  const p3 = parse(form.plan3m, DEFAULT_PLAN_PRICES["3m"])
+  const p6 = parse(form.plan6m, DEFAULT_PLAN_PRICES["6m"])
+  const p12 = parse(form.plan12m, DEFAULT_PLAN_PRICES["12m"])
+  const pLife = parse(form.planLifetime, DEFAULT_PLAN_PRICES.lifetime)
+
+  return [
+    { id: "3m" as const, label: "3 Months", months: 3, price: p3 },
+    { id: "6m" as const, label: "6 Months", months: 6, price: p6 },
+    { id: "12m" as const, label: "12 Months", months: 12, price: p12 },
+    { id: "lifetime" as const, label: "Lifetime", months: null, price: pLife },
+  ]
+}
+
 export function AdminProducts() {
   const { products, updateProduct, deleteProduct, addProduct } = useProductsStore()
   const [editing, setEditing] = useState<Product | null>(null)
@@ -29,9 +60,14 @@ export function AdminProducts() {
     categoryId: categories[0]?.id ?? "1",
     inStock: true,
     featured: false,
+    plan3m: String(DEFAULT_PLAN_PRICES["3m"]),
+    plan6m: String(DEFAULT_PLAN_PRICES["6m"]),
+    plan12m: String(DEFAULT_PLAN_PRICES["12m"]),
+    planLifetime: String(DEFAULT_PLAN_PRICES.lifetime),
   })
 
   const openEdit = (p: Product) => {
+    const byId = Object.fromEntries((p.plans ?? []).map((plan) => [plan.id, plan.price]))
     setEditing(p)
     setForm({
       name: p.name,
@@ -41,20 +77,29 @@ export function AdminProducts() {
       categoryId: p.categoryId,
       inStock: p.inStock,
       featured: !!p.featured,
+      plan3m: String(byId["3m"] ?? DEFAULT_PLAN_PRICES["3m"]),
+      plan6m: String(byId["6m"] ?? DEFAULT_PLAN_PRICES["6m"]),
+      plan12m: String(byId["12m"] ?? DEFAULT_PLAN_PRICES["12m"]),
+      planLifetime: String(byId["lifetime"] ?? p.price ?? DEFAULT_PLAN_PRICES.lifetime),
     })
   }
 
   const saveEdit = async () => {
     if (!editing) return
+    const plans = buildPlansFromForm(form)
+    const lifetimePlanPrice = plans.find((p) => p.id === "lifetime")?.price
+    const fallbackPrice = Number(form.price) || 0
+    const lifetime = lifetimePlanPrice ?? fallbackPrice
     await updateProduct(editing.id, {
       name: form.name,
       description: form.description,
-      price: Number(form.price) || 0,
+      price: lifetime,
       image: form.image,
       categoryId: form.categoryId,
       category: categories.find((c) => c.id === form.categoryId)?.name ?? editing.category,
       inStock: form.inStock,
       featured: form.featured,
+      plans,
     })
     setEditing(null)
   }
@@ -68,20 +113,29 @@ export function AdminProducts() {
       categoryId: categories[0]?.id ?? "1",
       inStock: true,
       featured: false,
+      plan3m: String(DEFAULT_PLAN_PRICES["3m"]),
+      plan6m: String(DEFAULT_PLAN_PRICES["6m"]),
+      plan12m: String(DEFAULT_PLAN_PRICES["12m"]),
+      planLifetime: String(DEFAULT_PLAN_PRICES.lifetime),
     })
     setAdding(true)
   }
 
   const saveAdd = async () => {
+    const plans = buildPlansFromForm(form)
+    const lifetimePlanPrice = plans.find((p) => p.id === "lifetime")?.price
+    const fallbackPrice = Number(form.price) || 0
+    const lifetime = lifetimePlanPrice ?? fallbackPrice
     await addProduct({
       name: form.name,
       description: form.description,
-      price: Number(form.price) || 0,
+      price: lifetime,
       image: form.image,
       category: categories.find((c) => c.id === form.categoryId)?.name ?? "Other",
       categoryId: form.categoryId,
       inStock: form.inStock,
       featured: form.featured,
+      plans,
       slug: "",
     })
     setAdding(false)
@@ -105,6 +159,14 @@ export function AdminProducts() {
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-zinc-100">{p.name}</p>
                 <p className="text-sm text-zinc-500">{formatPrice(p.price)} · {p.category}</p>
+                {p.plans?.length ? (
+                  <p className="text-xs text-zinc-600 mt-0.5">
+                    3m: {formatPrice(p.plans.find((plan) => plan.id === "3m")?.price ?? 0)} · 6m:{" "}
+                    {formatPrice(p.plans.find((plan) => plan.id === "6m")?.price ?? 0)} · 12m:{" "}
+                    {formatPrice(p.plans.find((plan) => plan.id === "12m")?.price ?? 0)} · lifetime:{" "}
+                    {formatPrice(p.plans.find((plan) => plan.id === "lifetime")?.price ?? p.price)}
+                  </p>
+                ) : null}
               </div>
               <div className="flex items-center gap-2">
                 {p.featured && <Badge>Featured</Badge>}
@@ -149,13 +211,51 @@ export function AdminProducts() {
               />
             </div>
             <div>
-              <Label>Price</Label>
+              <Label>Legacy Price (fallback)</Label>
               <Input
                 type="number"
                 value={form.price}
                 onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
                 className="mt-2"
               />
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <Label>3 Months Price</Label>
+                <Input
+                  type="number"
+                  value={form.plan3m}
+                  onChange={(e) => setForm((f) => ({ ...f, plan3m: e.target.value }))}
+                  className="mt-2"
+                />
+              </div>
+              <div>
+                <Label>6 Months Price</Label>
+                <Input
+                  type="number"
+                  value={form.plan6m}
+                  onChange={(e) => setForm((f) => ({ ...f, plan6m: e.target.value }))}
+                  className="mt-2"
+                />
+              </div>
+              <div>
+                <Label>12 Months Price</Label>
+                <Input
+                  type="number"
+                  value={form.plan12m}
+                  onChange={(e) => setForm((f) => ({ ...f, plan12m: e.target.value }))}
+                  className="mt-2"
+                />
+              </div>
+              <div>
+                <Label>Lifetime Price</Label>
+                <Input
+                  type="number"
+                  value={form.planLifetime}
+                  onChange={(e) => setForm((f) => ({ ...f, planLifetime: e.target.value }))}
+                  className="mt-2"
+                />
+              </div>
             </div>
             <div>
               <Label>Image URL</Label>
@@ -216,13 +316,51 @@ export function AdminProducts() {
               />
             </div>
             <div>
-              <Label>Price</Label>
+              <Label>Legacy Price (fallback)</Label>
               <Input
                 type="number"
                 value={form.price}
                 onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
                 className="mt-2"
               />
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <Label>3 Months Price</Label>
+                <Input
+                  type="number"
+                  value={form.plan3m}
+                  onChange={(e) => setForm((f) => ({ ...f, plan3m: e.target.value }))}
+                  className="mt-2"
+                />
+              </div>
+              <div>
+                <Label>6 Months Price</Label>
+                <Input
+                  type="number"
+                  value={form.plan6m}
+                  onChange={(e) => setForm((f) => ({ ...f, plan6m: e.target.value }))}
+                  className="mt-2"
+                />
+              </div>
+              <div>
+                <Label>12 Months Price</Label>
+                <Input
+                  type="number"
+                  value={form.plan12m}
+                  onChange={(e) => setForm((f) => ({ ...f, plan12m: e.target.value }))}
+                  className="mt-2"
+                />
+              </div>
+              <div>
+                <Label>Lifetime Price</Label>
+                <Input
+                  type="number"
+                  value={form.planLifetime}
+                  onChange={(e) => setForm((f) => ({ ...f, planLifetime: e.target.value }))}
+                  className="mt-2"
+                />
+              </div>
             </div>
             <div>
               <Label>Image URL</Label>
