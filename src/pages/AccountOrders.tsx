@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { Link, useSearchParams } from "react-router-dom"
-import { ChevronRight } from "lucide-react"
+import { ChevronRight, Download } from "lucide-react"
 import { useAuthStore } from "@/stores/auth-store"
 import { useOrdersStore } from "@/stores/orders-store"
 import { formatPrice } from "@/lib/utils"
@@ -17,6 +17,8 @@ export function AccountOrders() {
   const ordersLoaded = useOrdersStore((s) => s.ordersLoaded)
   const [copyMessage, setCopyMessage] = useState<string | null>(null)
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null)
+  const justPaidOrderId = searchParams.get("paid")
+  const forexBotExeUrl = "/bot-app/ForexBotsApp.exe"
 
   // Fetch orders from new schema path: admins/{adminId}/users/{userEmail}/orders
   useEffect(() => {
@@ -54,6 +56,21 @@ export function AccountOrders() {
       <p className="text-sm text-zinc-500 mb-8">
         Paid orders include license keys for your bot executables (Python + GUI). Copy the key to activate in-app.
       </p>
+      {justPaidOrderId && (
+        <Card className="mb-6 border-emerald-500/30 bg-emerald-500/10">
+          <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4">
+            <p className="text-sm text-emerald-200">
+              Payment received for order <span className="font-semibold">#{justPaidOrderId.slice(-8).toUpperCase()}</span>. Download your bot app below.
+            </p>
+            <Button asChild variant="outline" className="border-emerald-400/40 text-emerald-200 hover:bg-emerald-500/15">
+              <a href={forexBotExeUrl} download className="inline-flex items-center justify-center gap-2">
+                <Download className="h-4 w-4 shrink-0" />
+                Download ForexBotsApp.exe
+              </a>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
       {copyMessage && (
         <p className="mb-4 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-sm px-3 py-2">
           {copyMessage}

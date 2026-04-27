@@ -57,7 +57,7 @@ export function ProductCard({ product }: ProductCardProps) {
       <CardFooter className="p-4 pt-0 flex flex-col gap-2">
         <div className="flex gap-2">
           <Button
-            className="flex-1 whitespace-nowrap"
+            className="flex-1 whitespace-nowrap bg-orange-500 text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-orange-600"
             size="sm"
             onClick={(e) => {
               e.preventDefault()

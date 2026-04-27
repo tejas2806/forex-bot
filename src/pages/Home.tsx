@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom"
+import { useEffect, useRef, useState } from "react"
 import { ArrowRight, Bot, ShieldCheck, TrendingUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -14,6 +15,26 @@ export function Home() {
   const products = useProductsStore((s) => s.products)
   const productsLoaded = useProductsStore((s) => s.productsLoaded)
   const featured = products.filter((p) => p.featured).slice(0, 4)
+  const featuredSectionRef = useRef<HTMLDivElement | null>(null)
+  const [showFeaturedMotion, setShowFeaturedMotion] = useState(false)
+
+  useEffect(() => {
+    const node = featuredSectionRef.current
+    if (!node) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setShowFeaturedMotion(true)
+          observer.disconnect()
+        }
+      },
+      { threshold: 0.2 }
+    )
+
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [])
 
   return (
     <div>
@@ -95,35 +116,38 @@ export function Home() {
           </div>
 
           <div className="mt-12 grid gap-4 md:grid-cols-3">
-            <Card className="bg-zinc-900/40">
+            <Card className="group relative overflow-hidden bg-zinc-900/40 transition-all duration-300 hover:-translate-y-1 hover:border-orange-500/50 hover:shadow-[0_14px_40px_rgba(249,115,22,0.18)]">
+              <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 bg-gradient-to-br from-orange-500/12 via-transparent to-transparent" />
               <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Bot className="h-4 w-4 text-orange-500" />
+                <CardTitle className="relative flex items-center gap-2 text-base transition-colors duration-300 group-hover:text-orange-300">
+                  <Bot className="h-4 w-4 text-orange-500 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:scale-110" />
                   Automated execution
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="relative transition-colors duration-300 group-hover:text-zinc-300">
                   Deploy battle-tested strategy bots with minimal setup.
                 </CardDescription>
               </CardHeader>
             </Card>
-            <Card className="bg-zinc-900/40">
+            <Card className="group relative overflow-hidden bg-zinc-900/40 transition-all duration-300 hover:-translate-y-1 hover:border-orange-500/50 hover:shadow-[0_14px_40px_rgba(249,115,22,0.18)]">
+              <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 bg-gradient-to-br from-orange-500/12 via-transparent to-transparent" />
               <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <TrendingUp className="h-4 w-4 text-orange-500" />
+                <CardTitle className="relative flex items-center gap-2 text-base transition-colors duration-300 group-hover:text-orange-300">
+                  <TrendingUp className="h-4 w-4 text-orange-500 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:scale-110" />
                   Transparent results
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="relative transition-colors duration-300 group-hover:text-zinc-300">
                   Validate strategy behavior with performance-focused analytics.
                 </CardDescription>
               </CardHeader>
             </Card>
-            <Card className="bg-zinc-900/40">
+            <Card className="group relative overflow-hidden bg-zinc-900/40 transition-all duration-300 hover:-translate-y-1 hover:border-orange-500/50 hover:shadow-[0_14px_40px_rgba(249,115,22,0.18)]">
+              <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 bg-gradient-to-br from-orange-500/12 via-transparent to-transparent" />
               <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <ShieldCheck className="h-4 w-4 text-orange-500" />
+                <CardTitle className="relative flex items-center gap-2 text-base transition-colors duration-300 group-hover:text-orange-300">
+                  <ShieldCheck className="h-4 w-4 text-orange-500 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:scale-110" />
                   Risk-aware tooling
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="relative transition-colors duration-300 group-hover:text-zinc-300">
                   Use disciplined configurations made for serious capital protection.
                 </CardDescription>
               </CardHeader>
@@ -133,29 +157,43 @@ export function Home() {
       </section>
 
       <section className="container mx-auto px-4 py-16">
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="font-display text-2xl font-semibold text-zinc-100">Featured bots & products</h2>
-          <Button variant="ghost" asChild>
-            <Link to="/shop?featured=1">View all</Link>
-          </Button>
+        <div className="p-0">
+          <div ref={featuredSectionRef} className="relative mb-8 flex items-center justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Top performing strategies</p>
+              <h2 className="mt-1 font-display text-2xl font-semibold text-zinc-100">Featured bots & products</h2>
+            </div>
+            <Button variant="ghost" asChild>
+              <Link to="/shop?featured=1">View all</Link>
+            </Button>
+          </div>
+          {!productsLoaded ? (
+            <div className="relative grid grid-cols-1 justify-items-center gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <div key={index} className="w-full max-w-sm">
+                  <ProductCardSkeleton />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="relative grid grid-cols-1 justify-items-center gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {featured.map((product, index) => (
+                <div
+                  key={product.id}
+                  className={`group w-full max-w-sm featured-card-reveal ${
+                    showFeaturedMotion ? "featured-card-reveal-visible" : ""
+                  }`}
+                  style={{ transitionDelay: `${index * 150}ms` }}
+                >
+                  <div className="pointer-events-none absolute inset-0 -z-10 opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100 bg-gradient-to-br from-orange-500/20 to-cyan-500/10" />
+                  <div className="featured-card-shine">
+                    <ProductCard product={product} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-        {!productsLoaded ? (
-          <div className="grid grid-cols-1 justify-items-center gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {Array.from({ length: 4 }).map((_, index) => (
-              <div key={index} className="w-full max-w-sm">
-                <ProductCardSkeleton />
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 justify-items-center gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {featured.map((product) => (
-              <div key={product.id} className="w-full max-w-sm">
-                <ProductCard product={product} />
-              </div>
-            ))}
-          </div>
-        )}
       </section>
 
       <section className="container mx-auto px-4 pb-16">

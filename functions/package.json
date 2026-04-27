@@ -1,0 +1,19 @@
+{
+  "name": "alphaforge-functions",
+  "private": true,
+  "main": "src/index.js",
+  "scripts": {
+    "build": "node -e \"console.log('functions build ok')\"",
+    "serve": "firebase emulators:start --only functions",
+    "deploy": "firebase deploy --only functions"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "firebase-admin": "^13.8.0",
+    "firebase-functions": "^6.5.0",
+    "razorpay": "^2.9.6"
+  }
+}

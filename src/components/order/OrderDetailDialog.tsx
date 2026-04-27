@@ -36,8 +36,13 @@ function LicenseRow({ license, onCopy }: { license: License; onCopy: (key: strin
         </Button>
         {license.downloadUrl && (
           <Button asChild variant="outline" size="sm" className="h-8">
-            <a href={license.downloadUrl} target="_blank" rel="noopener noreferrer">
-              <Download className="h-4 w-4 mr-1" /> Download
+            <a
+              href={license.downloadUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-1.5"
+            >
+              <Download className="h-4 w-4 shrink-0" /> Download
             </a>
           </Button>
         )}
@@ -110,6 +115,8 @@ export function OrderDetailDialog({
       })
     : ""
   const totalQty = order?.items.reduce((sum, item) => sum + item.quantity, 0) ?? 0
+  const canDownloadApp = order?.status === "paid" || order?.status === "delivered"
+  const forexBotExeUrl = "/bot-app/ForexBotsApp.exe"
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -236,6 +243,18 @@ export function OrderDetailDialog({
                 </div>
               )}
             </div>
+
+            {canDownloadApp && (
+              <div>
+                <p className="text-xs uppercase tracking-wide text-zinc-500 mb-2">Bot app</p>
+                <Button asChild variant="outline">
+                  <a href={forexBotExeUrl} download className="inline-flex items-center justify-center gap-2">
+                    <Download className="h-4 w-4 shrink-0" />
+                    Download ForexBotsApp.exe
+                  </a>
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </DialogContent>

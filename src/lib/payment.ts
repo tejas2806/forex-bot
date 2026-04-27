@@ -22,6 +22,34 @@ export interface PaymentSessionResponse {
   error?: string
 }
 
+export interface RazorpayOrderRequest {
+  orderId: string
+  amountPaise: number
+  currency: string
+  userEmail: string
+  userId: string
+  productNames: string[]
+}
+
+export interface RazorpayOrderResponse {
+  keyId: string
+  razorpayOrderId: string
+  amount: number
+  currency: string
+}
+
+export interface RazorpayVerifyRequest {
+  orderId: string
+  razorpayOrderId: string
+  razorpayPaymentId: string
+  razorpaySignature: string
+}
+
+export interface RazorpayVerifyResponse {
+  success: boolean
+  message?: string
+}
+
 /** Get payment API base URL from env (e.g. Cloud Function URL). */
 export function getPaymentApiUrl(): string | undefined {
   return typeof import.meta.env !== "undefined"
@@ -50,6 +78,70 @@ export async function createStripeCheckoutSession(
       return { error: (err as { message?: string }).message || res.statusText }
     }
     return (await res.json()) as PaymentSessionResponse
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Network error" }
+  }
+}
+
+export function getRazorpayKeyId(): string | undefined {
+  return typeof import.meta.env !== "undefined"
+    ? (import.meta.env.VITE_RAZORPAY_KEY_ID as string | undefined)
+    : undefined
+}
+
+export async function loadRazorpayScript(): Promise<boolean> {
+  if (typeof window === "undefined") return false
+  if ((window as Window & { Razorpay?: unknown }).Razorpay) return true
+
+  return new Promise((resolve) => {
+    const script = document.createElement("script")
+    script.src = "https://checkout.razorpay.com/v1/checkout.js"
+    script.async = true
+    script.onload = () => resolve(true)
+    script.onerror = () => resolve(false)
+    document.body.appendChild(script)
+  })
+}
+
+export async function createRazorpayOrder(
+  req: RazorpayOrderRequest
+): Promise<RazorpayOrderResponse | { error: string }> {
+  const base = getPaymentApiUrl()
+  if (!base) return { error: "Payment API URL not configured." }
+
+  try {
+    const res = await fetch(`${base.replace(/\/$/, "")}/createRazorpayOrder`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req),
+    })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      return { error: (err as { message?: string }).message || res.statusText }
+    }
+    return (await res.json()) as RazorpayOrderResponse
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Network error" }
+  }
+}
+
+export async function verifyRazorpayPayment(
+  req: RazorpayVerifyRequest
+): Promise<RazorpayVerifyResponse | { error: string }> {
+  const base = getPaymentApiUrl()
+  if (!base) return { error: "Payment API URL not configured." }
+
+  try {
+    const res = await fetch(`${base.replace(/\/$/, "")}/verifyRazorpayPayment`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req),
+    })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      return { error: (err as { message?: string }).message || res.statusText }
+    }
+    return (await res.json()) as RazorpayVerifyResponse
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Network error" }
   }

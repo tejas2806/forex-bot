@@ -50,16 +50,22 @@ export function ProductDetail() {
         </Link>
       </Button>
 
-      <div className="grid md:grid-cols-2 gap-12">
-        <div className="aspect-square overflow-hidden rounded-xl bg-zinc-900/50">
+      <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
+        <div className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/40">
           <img
             src={product.image}
             alt={product.name}
-            className="h-full w-full object-cover"
+            className="h-72 w-full object-cover md:h-80 lg:h-[420px]"
           />
+          <div className="border-t border-zinc-800 bg-gradient-to-r from-zinc-900/80 to-zinc-900/40 p-4">
+            <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Performance-ready asset</p>
+            <p className="mt-1 text-sm text-zinc-300">
+              Optimized for automation-first execution and risk-aware deployment.
+            </p>
+          </div>
         </div>
-        <div>
-          <div className="flex items-center gap-2 mb-2">
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/30 p-6 lg:p-7">
+          <div className="mb-2 flex items-center gap-2">
             <Badge variant="secondary">{product.category}</Badge>
             {product.featured && <Badge>Featured</Badge>}
           </div>
@@ -74,7 +80,7 @@ export function ProductDetail() {
           )}
           <p className="text-zinc-400 mt-6 leading-relaxed">{product.description}</p>
           {plans.length > 0 && (
-            <div className="mt-6">
+            <div className="mt-7">
               <p className="mb-2 text-sm font-medium text-zinc-300">Choose plan</p>
               <div className="grid gap-2 sm:grid-cols-2">
                 {plans.map((plan) => (
@@ -95,15 +101,19 @@ export function ProductDetail() {
               </div>
             </div>
           )}
-          <div className="mt-8 flex flex-wrap gap-4">
+          <div className="mt-8 flex flex-wrap items-center gap-4">
             <Button
               size="lg"
+              className="h-11 bg-orange-500 px-6 text-white transition-all hover:-translate-y-0.5 hover:bg-orange-600"
               onClick={() => addItem(product, 1, selectedPlan as ProductPlan | undefined)}
               disabled={!product.inStock}
             >
               <ShoppingCart className="h-5 w-5 mr-2" />
               Add to cart
             </Button>
+            <p className="text-sm text-zinc-500">
+              Instant delivery in account after payment verification.
+            </p>
             {!product.inStock && (
               <span className="text-sm text-zinc-500 self-center">Out of stock</span>
             )}

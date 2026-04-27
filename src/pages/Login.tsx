@@ -152,16 +152,18 @@ export function Login() {
               <Button type="submit" className="h-11 w-full rounded-xl" disabled={loading}>
                 {loading ? "Signing in..." : "Continue"}
               </Button>
-              <div className="flex justify-center gap-3 pt-1">
+              <div className="pt-1">
                 <Button
                   type="button"
                   variant="outline"
-                  size="icon"
-                  className="rounded-full border-zinc-700 bg-zinc-900/70"
+                  className="h-11 w-full rounded-xl border-zinc-700 bg-zinc-900/70 text-zinc-100 hover:bg-zinc-800"
                   onClick={handleGoogle}
                   disabled={loading}
                 >
-                  <GoogleIcon className="h-4 w-4" />
+                  <span className="inline-flex items-center justify-center gap-2">
+                    <GoogleIcon className="h-5 w-5" />
+                    Continue with Google
+                  </span>
                 </Button>
               </div>
             </form>
