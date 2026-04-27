@@ -52,10 +52,6 @@ export function Bot2PerformanceChart() {
     [allTrades, selectedDate]
   )
   const monthKey = selectedDate.slice(0, 7)
-  const monthTrades = useMemo(
-    () => allTrades.filter((t) => t.entryTime.slice(0, 7) === monthKey),
-    [allTrades, monthKey]
-  )
 
   const INITIAL_INVESTMENT = 1000
   const RISK_PCT_PER_TRADE = 0.0004 // 0.04% per trade for Bot2 – conservative, realistic growth
