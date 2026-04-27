@@ -9,8 +9,17 @@ import { useCartStore } from "@/stores/cart-store"
 export function ProductDetail() {
   const { slug } = useParams<{ slug: string }>()
   const getBySlug = useProductsStore((s) => s.getBySlug)
+  const productsLoaded = useProductsStore((s) => s.productsLoaded)
   const product = slug ? getBySlug(slug) : undefined
   const addItem = useCartStore((s) => s.addItem)
+
+  if (!productsLoaded) {
+    return (
+      <div className="container mx-auto px-4 py-16 text-center">
+        <p className="text-zinc-500">Loading product…</p>
+      </div>
+    )
+  }
 
   if (!product) {
     return (

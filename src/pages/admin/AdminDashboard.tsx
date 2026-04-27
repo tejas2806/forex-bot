@@ -4,9 +4,7 @@ import { useProductsStore } from "@/stores/products-store"
 import { useOrdersStore } from "@/stores/orders-store"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatPrice } from "@/lib/utils"
-import { XauUsdCsvChart } from "@/components/analytics/XauUsdCsvChart"
-import { Bot2PerformanceChart } from "@/components/analytics/Bot2PerformanceChart"
-import { Bot3PerformanceChart } from "@/components/analytics/Bot3PerformanceChart"
+import { BotCsvPerformanceChart } from "@/components/analytics/BotCsvPerformanceChart"
 
 export function AdminDashboard() {
   const products = useProductsStore((s) => s.products)
@@ -204,11 +202,7 @@ export function AdminDashboard() {
         </Card>
       </div>
 
-      <XauUsdCsvChart />
-
-      <Bot2PerformanceChart />
-
-      <Bot3PerformanceChart />
+      <BotCsvPerformanceChart initialBot="1" />
     </div>
   )
 }

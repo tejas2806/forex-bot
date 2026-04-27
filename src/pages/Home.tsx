@@ -6,6 +6,7 @@ import { useProductsStore } from "@/stores/products-store"
 
 export function Home() {
   const products = useProductsStore((s) => s.products)
+  const productsLoaded = useProductsStore((s) => s.productsLoaded)
   const featured = products.filter((p) => p.featured).slice(0, 4)
 
   return (
@@ -39,11 +40,15 @@ export function Home() {
             <Link to="/shop?featured=1">View all</Link>
           </Button>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {featured.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
+        {!productsLoaded ? (
+          <p className="text-zinc-500">Loading products…</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {featured.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        )}
       </section>
     </div>
   )

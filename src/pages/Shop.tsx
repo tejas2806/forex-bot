@@ -12,6 +12,7 @@ export function Shop() {
   const q = searchParams.get("q") ?? ""
 
   const products = useProductsStore((s) => s.products)
+  const productsLoaded = useProductsStore((s) => s.productsLoaded)
   const filtered = useMemo(() => {
     let list = products
     if (category) {
@@ -29,7 +30,7 @@ export function Shop() {
       )
     }
     return list
-  }, [category, featured, q])
+  }, [products, category, featured, q])
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -73,7 +74,11 @@ export function Shop() {
         </p>
       )}
 
-      {filtered.length === 0 ? (
+      {!productsLoaded ? (
+        <div className="rounded-xl border border-zinc-800 bg-card p-12 text-center text-zinc-500">
+          Loading products…
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="rounded-xl border border-zinc-800 bg-card p-12 text-center text-zinc-500">
           No products match your filters. Try another category or search term.
         </div>

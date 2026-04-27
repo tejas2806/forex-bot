@@ -1,3 +1,4 @@
+import { useEffect } from "react"
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
 import { MainLayout } from "@/components/layout/MainLayout"
 import { AdminLayout } from "@/components/layout/AdminLayout"
@@ -14,8 +15,29 @@ import { AdminDashboard } from "@/pages/admin/AdminDashboard"
 import { AdminProducts } from "@/pages/admin/AdminProducts"
 import { AdminOrders } from "@/pages/admin/AdminOrders"
 import { AdminUsers } from "@/pages/admin/AdminUsers"
+import { useAuthStore } from "@/stores/auth-store"
+import { useProductsStore } from "@/stores/products-store"
+import { useOrdersStore } from "@/stores/orders-store"
 
 function App() {
+  const initAuthListener = useAuthStore((s) => s.initAuthListener)
+  const authReady = useAuthStore((s) => s.authReady)
+  const user = useAuthStore((s) => s.user)
+  const loadProducts = useProductsStore((s) => s.loadProducts)
+  const loadOrders = useOrdersStore((s) => s.loadOrders)
+  useEffect(() => {
+    const unsubscribe = initAuthListener()
+    return () => unsubscribe()
+  }, [initAuthListener])
+  // Wait for Firebase Auth so seed (empty DB) runs with a signed-in user; product reads stay public.
+  useEffect(() => {
+    if (!authReady) return
+    void loadProducts()
+  }, [authReady, user, loadProducts])
+  useEffect(() => {
+    loadOrders()
+  }, [loadOrders])
+
   return (
     <BrowserRouter>
       <Routes>

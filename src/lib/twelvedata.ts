@@ -17,6 +17,8 @@ export interface TwelveDataCandle {
   volume?: number
   /** UTC seconds, for lightweight-charts intraday */
   timestamp?: number
+  /** Optional signal column from CSV: e.g. \"buy\" / \"sell\" */
+  signal?: string
 }
 
 export interface TwelveDataResponse {
@@ -234,6 +236,7 @@ export function parseCSVToCandles(csvText: string): TwelveDataCandle[] {
   const lIdx = cols.indexOf("low") >= 0 ? cols.indexOf("low") : 3
   const cIdx = cols.indexOf("close") >= 0 ? cols.indexOf("close") : 4
   const vIdx = cols.indexOf("volume") >= 0 ? cols.indexOf("volume") : 5
+  const sIdx = cols.indexOf("signal") >= 0 ? cols.indexOf("signal") : -1
   const candles: TwelveDataCandle[] = []
   for (let i = 1; i < lines.length; i++) {
     const parts = lines[i].split(",")
@@ -247,6 +250,10 @@ export function parseCSVToCandles(csvText: string): TwelveDataCandle[] {
     const timestamp = timeStr.length > 10
       ? Math.floor(new Date(timeStr + (timeStr.includes("Z") ? "" : "Z")).getTime() / 1000)
       : undefined
+    const signal =
+      sIdx >= 0 && parts[sIdx] != null && parts[sIdx].trim() !== ""
+        ? parts[sIdx].trim().toLowerCase()
+        : undefined
     candles.push({
       time: timeStr.length > 10 ? timeStr : timeStr.slice(0, 10),
       open,
@@ -255,6 +262,7 @@ export function parseCSVToCandles(csvText: string): TwelveDataCandle[] {
       close,
       volume: vIdx >= 0 && parts[vIdx]?.trim() ? parseFloat(parts[vIdx]) : undefined,
       timestamp,
+      ...(signal != null && { signal }),
     })
   }
   return candles

@@ -44,14 +44,15 @@ export function AdminProducts() {
     })
   }
 
-  const saveEdit = () => {
+  const saveEdit = async () => {
     if (!editing) return
-    updateProduct(editing.id, {
+    await updateProduct(editing.id, {
       name: form.name,
       description: form.description,
       price: Number(form.price) || 0,
       image: form.image,
       categoryId: form.categoryId,
+      category: categories.find((c) => c.id === form.categoryId)?.name ?? editing.category,
       inStock: form.inStock,
       featured: form.featured,
     })
@@ -71,8 +72,8 @@ export function AdminProducts() {
     setAdding(true)
   }
 
-  const saveAdd = () => {
-    addProduct({
+  const saveAdd = async () => {
+    await addProduct({
       name: form.name,
       description: form.description,
       price: Number(form.price) || 0,
@@ -116,7 +117,7 @@ export function AdminProducts() {
                 variant="ghost"
                 size="icon"
                 className="text-red-400 hover:text-red-300"
-                onClick={() => deleteProduct(p.id)}
+                onClick={() => void deleteProduct(p.id)}
               >
                 <Trash2 className="h-4 w-4" />
               </Button>

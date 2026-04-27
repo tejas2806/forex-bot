@@ -37,7 +37,7 @@ export function AdminOrders() {
                 <Select
                   value={order.status}
                   onValueChange={(value) =>
-                    updateOrderStatus(order.id, value as Order["status"])
+                    void updateOrderStatus(order.id, value as Order["status"])
                   }
                 >
                   <SelectTrigger className="w-[140px]">

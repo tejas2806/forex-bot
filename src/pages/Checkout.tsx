@@ -8,6 +8,7 @@ import { useCartStore } from "@/stores/cart-store"
 import { useAuthStore } from "@/stores/auth-store"
 import { useOrdersStore } from "@/stores/orders-store"
 import { formatPrice } from "@/lib/utils"
+import { createStripeCheckoutSession, getPaymentApiUrl } from "@/lib/payment"
 import type { PaymentMethod } from "@/types"
 
 export function Checkout() {
@@ -40,15 +41,45 @@ export function Checkout() {
       return
     }
     setProcessing(true)
-    await new Promise((r) => setTimeout(r, 1200))
-    addOrder({
+    const orderPayload = {
       userId: user.id,
+      userEmail: user.email,
+      userName: user.name,
       items: [...items],
       total: totalPrice(),
-      status: "paid",
       paymentMethod,
       createdAt: new Date().toISOString(),
-      shippingAddress: address || "Demo address, 123 Street",
+      shippingAddress: address || "Email for licenses / delivery",
+    }
+    const useStripe = paymentMethod === "card" && getPaymentApiUrl()
+    if (useStripe) {
+      const pendingOrder = await addOrder({
+        ...orderPayload,
+        status: "pending",
+      })
+      const result = await createStripeCheckoutSession({
+        orderId: pendingOrder.id,
+        amountCents: Math.round(totalPrice() * 100),
+        currency: "usd",
+        userEmail: user.email,
+        userId: user.id,
+        productNames: items.map((i) => i.product.name),
+        successUrl: `${window.location.origin}/account/orders?paid=${pendingOrder.id}`,
+        cancelUrl: `${window.location.origin}/checkout`,
+      })
+      if (result?.url) {
+        window.location.href = result.url
+        return
+      }
+      if (result?.error) {
+        setProcessing(false)
+        return
+      }
+    }
+    await new Promise((r) => setTimeout(r, 800))
+    await addOrder({
+      ...orderPayload,
+      status: "paid",
     })
     clearCart()
     setProcessing(false)
