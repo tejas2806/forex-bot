@@ -35,8 +35,9 @@ function App() {
     void loadProducts()
   }, [authReady, user, loadProducts])
   useEffect(() => {
-    loadOrders()
-  }, [loadOrders])
+    if (!authReady || !user) return
+    void loadOrders()
+  }, [authReady, user, loadOrders])
 
   return (
     <BrowserRouter>

@@ -109,10 +109,11 @@ export function OrderDetailDialog({
         minute: "2-digit",
       })
     : ""
+  const totalQty = order?.items.reduce((sum, item) => sum + item.quantity, 0) ?? 0
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto border-zinc-800 bg-zinc-900">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto border-zinc-800 bg-zinc-900">
         <DialogHeader>
           <DialogTitle className="text-left text-zinc-100">
             {orderId ? `Order #${orderId.slice(-8).toUpperCase()}` : "Order details"}
@@ -132,7 +133,7 @@ export function OrderDetailDialog({
         {!loading && order && (
           <div className="space-y-5 text-sm">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="flex items-center gap-2 text-zinc-400">
+              <span className="flex items-center gap-2 text-zinc-400 text-base">
                 <Calendar className="h-4 w-4" />
                 {dateStr}
               </span>
@@ -151,9 +152,23 @@ export function OrderDetailDialog({
               </Badge>
             </div>
 
-            <div className="flex items-center gap-2 text-zinc-400">
-              <CreditCard className="h-4 w-4 shrink-0" />
-              <span>Payment: {order.paymentMethod}</span>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <p className="text-xs uppercase tracking-wide text-zinc-500">Buyer name</p>
+                <p className="text-zinc-100">{order.userName || order.userEmail || order.userId}</p>
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs uppercase tracking-wide text-zinc-500">Buyer email</p>
+                <p className="text-zinc-100">{order.userEmail || "N/A"}</p>
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs uppercase tracking-wide text-zinc-500">Payment mode</p>
+                <p className="capitalize text-zinc-100">{order.paymentMethod}</p>
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs uppercase tracking-wide text-zinc-500">Payment value</p>
+                <p className="font-semibold text-zinc-100">{formatPrice(order.total)}</p>
+              </div>
             </div>
 
             {order.shippingAddress && (
@@ -182,24 +197,44 @@ export function OrderDetailDialog({
               </ul>
             </div>
 
-            <p className="flex justify-between text-base font-semibold text-zinc-100 pt-2 border-t border-zinc-800">
-              <span>Total</span>
-              <span>{formatPrice(order.total)}</span>
-            </p>
+            <div>
+              <p className="text-xs uppercase tracking-wide text-zinc-500">Meta details</p>
+              <div className="mt-2 grid gap-2 rounded-lg border border-zinc-800 bg-zinc-900/50 p-3 text-zinc-300 md:grid-cols-2">
+                <p>Order ID: {order.id}</p>
+                <p>User ID: {order.userId}</p>
+                <p>Total items: {order.items.length}</p>
+                <p>Total quantity: {totalQty}</p>
+                <p>Status: {order.status}</p>
+                <p>Date-Time: {new Date(order.createdAt).toLocaleString()}</p>
+                <p className="md:col-span-2">Shipping address: {order.shippingAddress || "N/A"}</p>
+              </div>
+            </div>
 
-            {order.status === "paid" && licenses.length > 0 && (
-              <div>
-                <p className="flex items-center gap-2 font-medium text-zinc-300 mb-2">
-                  <Key className="h-4 w-4" />
-                  License keys
+            <div>
+              <p className="flex items-center gap-2 font-medium text-zinc-300 mb-2">
+                <CreditCard className="h-4 w-4" />
+                Total
+              </p>
+              <p className="text-lg font-semibold text-zinc-100">{formatPrice(order.total)}</p>
+            </div>
+
+            <div>
+              <p className="flex items-center gap-2 font-medium text-zinc-300 mb-2">
+                <Key className="h-4 w-4" />
+                License keys
+              </p>
+              {licenses.length === 0 ? (
+                <p className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3 text-zinc-400">
+                  No license keys generated for this order yet.
                 </p>
+              ) : (
                 <div className="space-y-2">
                   {licenses.map((lic) => (
                     <LicenseRow key={lic.id} license={lic} onCopy={handleCopy} />
                   ))}
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         )}
       </DialogContent>

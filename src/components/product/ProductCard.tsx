@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { formatPrice } from "@/lib/utils"
 import { useCartStore } from "@/stores/cart-store"
+import { toast } from "@/hooks/use-toast"
 
 function getPerformancePath(product: Product): string {
   const bot = product.performanceBot ?? (product.id === "1" || product.id === "2" || product.id === "3" ? product.id : null)
@@ -55,16 +56,22 @@ export function ProductCard({ product }: ProductCardProps) {
             onClick={(e) => {
               e.preventDefault()
               addItem(product)
+              toast({
+                title: "Added to cart",
+                description: `${product.name} is ready for checkout.`,
+              })
             }}
             disabled={!product.inStock}
           >
             <ShoppingCart className="h-4 w-4 mr-1" />
-            Add to cart
+            <span className="hidden sm:inline">Add to cart</span>
+            <span className="sm:hidden">Add</span>
           </Button>
           <Button variant="outline" size="sm" asChild>
             <Link to={performancePath}>
               <LineChart className="h-4 w-4 mr-1" />
-              Check performance
+              <span className="hidden sm:inline">Check performance</span>
+              <span className="sm:hidden">Performance</span>
             </Link>
           </Button>
         </div>

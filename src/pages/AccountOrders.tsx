@@ -1,45 +1,13 @@
 import { useEffect, useState } from "react"
 import { Link, useSearchParams } from "react-router-dom"
-import { Copy, Key, Download, ChevronRight } from "lucide-react"
+import { ChevronRight } from "lucide-react"
 import { useAuthStore } from "@/stores/auth-store"
 import { useOrdersStore } from "@/stores/orders-store"
-import { useLicensesStore } from "@/stores/licenses-store"
 import { formatPrice } from "@/lib/utils"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { OrderDetailDialog } from "@/components/order/OrderDetailDialog"
-import type { License } from "@/types"
-
-function LicenseRow({ license, onCopy }: { license: License; onCopy: (key: string) => void }) {
-  const [copied, setCopied] = useState(false)
-  const copy = () => {
-    onCopy(license.licenseKey)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-  return (
-    <div className="flex flex-wrap items-center justify-between gap-2 rounded border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-sm">
-      <div className="flex items-center gap-2">
-        <Key className="h-4 w-4 text-zinc-500" />
-        <span className="font-mono text-zinc-300">{license.licenseKey}</span>
-        <span className="text-zinc-500">· {license.productName}</span>
-      </div>
-      <div className="flex items-center gap-2">
-        <Button type="button" variant="ghost" size="sm" onClick={copy} className="h-8">
-          {copied ? "Copied" : <Copy className="h-4 w-4" />}
-        </Button>
-        {license.downloadUrl && (
-          <Button asChild variant="outline" size="sm" className="h-8">
-            <a href={license.downloadUrl} target="_blank" rel="noopener noreferrer">
-              <Download className="h-4 w-4 mr-1" /> Download
-            </a>
-          </Button>
-        )}
-      </div>
-    </div>
-  )
-}
 
 export function AccountOrders() {
   const [searchParams] = useSearchParams()
@@ -47,8 +15,6 @@ export function AccountOrders() {
   const loadOrdersForUser = useOrdersStore((s) => s.loadOrdersForUser)
   const orders = useOrdersStore((s) => s.orders)
   const ordersLoaded = useOrdersStore((s) => s.ordersLoaded)
-  const loadLicensesForUser = useLicensesStore((s) => s.loadLicensesForUser)
-  const getLicensesByOrderId = useLicensesStore((s) => s.getLicensesByOrderId)
   const [copyMessage, setCopyMessage] = useState<string | null>(null)
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null)
 
@@ -56,16 +22,14 @@ export function AccountOrders() {
   useEffect(() => {
     if (!user?.email) return
     loadOrdersForUser(undefined, user.email)
-    loadLicensesForUser(user.id)
-  }, [user?.id, user?.email, loadOrdersForUser, loadLicensesForUser])
+  }, [user?.email, loadOrdersForUser])
 
   // After Stripe redirect with ?paid=, refresh
   useEffect(() => {
     if (searchParams.get("paid") && user?.email) {
       loadOrdersForUser(undefined, user.email)
-      loadLicensesForUser(user.id)
     }
-  }, [searchParams.get("paid"), user, loadOrdersForUser, loadLicensesForUser])
+  }, [searchParams.get("paid"), user, loadOrdersForUser])
 
   const handleCopy = (key: string) => {
     navigator.clipboard.writeText(key)
@@ -115,13 +79,8 @@ export function AccountOrders() {
         <>
           <div className="space-y-6">
             {orders.map((order) => {
-              const orderLicenses = getLicensesByOrderId(order.id)
-              const orderItemCount = order.items.reduce((s, i) => s + i.quantity, 0)
-              const dateStr = new Date(order.createdAt).toLocaleDateString("en-GB", {
-                day: "2-digit",
-                month: "numeric",
-                year: "numeric",
-              })
+              const orderItemCount = order.items.length
+              const orderQuantity = order.items.reduce((s, i) => s + i.quantity, 0)
               return (
                 <Card
                   key={order.id}
@@ -148,24 +107,51 @@ export function AccountOrders() {
                       {order.status}
                     </Badge>
                   </CardHeader>
-                  <CardContent className="space-y-3 pt-0">
-                    <p className="text-sm text-zinc-500">
-                      {dateStr} · {orderItemCount} item(s)
-                    </p>
-                    <p className="font-semibold text-zinc-100">{formatPrice(order.total)}</p>
-                    <p className="text-xs text-zinc-500">Click to view full details</p>
-                    {order.status === "paid" && orderLicenses.length > 0 && (
-                      <div className="mt-4 space-y-2" onClick={(e) => e.stopPropagation()}>
-                        <p className="text-xs font-medium text-zinc-400 uppercase tracking-wide">
-                          License keys (for bot activation)
-                        </p>
-                        <div className="space-y-2">
-                          {orderLicenses.map((lic) => (
-                            <LicenseRow key={lic.id} license={lic} onCopy={handleCopy} />
-                          ))}
+                  <CardContent className="pt-0">
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <div>
+                          <p className="text-xs uppercase tracking-wide text-zinc-500">Buyer name</p>
+                          <p className="text-sm text-zinc-100">{order.userName || user.name}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs uppercase tracking-wide text-zinc-500">Buyer email</p>
+                          <p className="text-sm text-zinc-100">{order.userEmail || user.email}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs uppercase tracking-wide text-zinc-500">Purchased products</p>
+                          <ul className="mt-1 space-y-1">
+                            {order.items.map((item) => (
+                              <li key={item.product.id} className="text-sm text-zinc-300">
+                                {item.product.name} x{item.quantity}
+                              </li>
+                            ))}
+                          </ul>
                         </div>
                       </div>
-                    )}
+
+                      <div className="space-y-2">
+                        <div>
+                          <p className="text-xs uppercase tracking-wide text-zinc-500">Payment mode</p>
+                          <p className="text-sm capitalize text-zinc-100">{order.paymentMethod}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs uppercase tracking-wide text-zinc-500">Payment value</p>
+                          <p className="text-sm font-semibold text-zinc-100">{formatPrice(order.total)}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs uppercase tracking-wide text-zinc-500">Date & time</p>
+                          <p className="text-sm text-zinc-100">{new Date(order.createdAt).toLocaleString()}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs uppercase tracking-wide text-zinc-500">Meta</p>
+                          <p className="text-xs text-zinc-500">
+                            {orderItemCount} item type(s) · {orderQuantity} total qty
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="mt-4 text-xs text-zinc-500">Click to view full details</p>
                   </CardContent>
                 </Card>
               )

@@ -423,18 +423,24 @@ export async function getOrdersForUser(
 /** Get all orders (for admin). Uses collection group over new schema path. */
 export async function getOrders(adminEmail: string): Promise<Order[]> {
   const adminId = toAdminId(adminEmail)
-  const ref = collectionGroup(db, ORDERS_SUBCOLLECTION)
-  const q = query(
-    ref,
-    where(ADMIN_ID_FIELD, "==", adminId),
-    orderBy("createdAt", "desc")
-  )
-  const snap = await getDocs(q)
-  return snap.docs.map((d) => {
-    const data = d.data() as Record<string, unknown>
-    delete data[ADMIN_ID_FIELD]
-    return { id: d.id, ...data } as Order
-  })
+  try {
+    const ref = collectionGroup(db, ORDERS_SUBCOLLECTION)
+    const q = query(
+      ref,
+      where(ADMIN_ID_FIELD, "==", adminId),
+      orderBy("createdAt", "desc")
+    )
+    const snap = await getDocs(q)
+    const orders = snap.docs.map((d) => {
+      const data = d.data() as Record<string, unknown>
+      delete data[ADMIN_ID_FIELD]
+      return { id: d.id, ...data } as Order
+    })
+    if (orders.length > 0) return orders
+  } catch {
+    // Fallback below handles missing index or query constraints.
+  }
+  return getOrdersByAdminUsers(adminEmail)
 }
 
 /** Get one order from new schema path (no collection group). Use when you have userEmail. */
@@ -454,18 +460,24 @@ export async function getOrderForUser(
 /** Get one order by id (uses collection group). Returns null if not found. */
 export async function getOrder(adminEmail: string, orderId: string): Promise<Order | null> {
   const adminId = toAdminId(adminEmail)
-  const ref = collectionGroup(db, ORDERS_SUBCOLLECTION)
-  const q = query(
-    ref,
-    where(ADMIN_ID_FIELD, "==", adminId),
-    where("id", "==", orderId),
-    limit(1)
-  )
-  const snap = await getDocs(q)
-  if (snap.empty) return null
-  const data = snap.docs[0].data() as Record<string, unknown>
-  delete data[ADMIN_ID_FIELD]
-  return { id: snap.docs[0].id, ...data } as Order
+  try {
+    const ref = collectionGroup(db, ORDERS_SUBCOLLECTION)
+    const q = query(
+      ref,
+      where(ADMIN_ID_FIELD, "==", adminId),
+      where("id", "==", orderId),
+      limit(1)
+    )
+    const snap = await getDocs(q)
+    if (!snap.empty) {
+      const data = snap.docs[0].data() as Record<string, unknown>
+      delete data[ADMIN_ID_FIELD]
+      return { id: snap.docs[0].id, ...data } as Order
+    }
+  } catch {
+    // Fallback below handles missing index or query constraints.
+  }
+  return getOrderByAdminUsers(adminEmail, orderId)
 }
 
 export async function addOrder(adminEmail: string, order: Omit<Order, "id">): Promise<Order> {
@@ -733,6 +745,52 @@ function orderToFirestore(o: Order, adminEmail: string): DocumentData {
     createdAt: o.createdAt,
     shippingAddress: o.shippingAddress,
   }
+}
+
+/**
+ * Fallback reader for databases where order docs don't include adminId.
+ * Reads directly from admins/{adminId}/users/{userEmail}/orders.
+ */
+async function getOrdersByAdminUsers(adminEmail: string): Promise<Order[]> {
+  const usersSnap = await getDocs(getUsersRef(adminEmail))
+  const all: Order[] = []
+
+  for (const userDoc of usersSnap.docs) {
+    const userEmail = userDoc.id
+    const ordersRef = getUserOrdersRef(adminEmail, userEmail)
+    const ordersSnap = await getDocs(ordersRef)
+    for (const orderDoc of ordersSnap.docs) {
+      const data = orderDoc.data() as Record<string, unknown>
+      delete data[ADMIN_ID_FIELD]
+      all.push({ id: orderDoc.id, ...data } as Order)
+    }
+  }
+
+  return all.sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  )
+}
+
+/**
+ * Fallback single-order lookup by scanning users/{userEmail}/orders/{orderId}.
+ */
+async function getOrderByAdminUsers(
+  adminEmail: string,
+  orderId: string
+): Promise<Order | null> {
+  const usersSnap = await getDocs(getUsersRef(adminEmail))
+
+  for (const userDoc of usersSnap.docs) {
+    const userEmail = userDoc.id
+    const ref = getOrderRefUnderUser(adminEmail, userEmail, orderId)
+    const snap = await getDoc(ref)
+    if (!snap.exists()) continue
+    const data = snap.data() as Record<string, unknown>
+    delete data[ADMIN_ID_FIELD]
+    return { id: snap.id, ...data } as Order
+  }
+
+  return null
 }
 
 function productToFirestore(p: Product | (Omit<Product, "id"> & { slug: string })): DocumentData {
