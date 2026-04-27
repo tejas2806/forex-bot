@@ -8,6 +8,7 @@ import { useCartStore } from "@/stores/cart-store"
 import { useAuthStore } from "@/stores/auth-store"
 import { useOrdersStore } from "@/stores/orders-store"
 import { formatPrice } from "@/lib/utils"
+import { getForexBotDownloadUrl } from "@/lib/downloads"
 import {
   createRazorpayOrder,
   getPaymentApiUrl,
@@ -16,8 +17,6 @@ import {
   verifyRazorpayPayment,
 } from "@/lib/payment"
 import type { PaymentMethod } from "@/types"
-
-const FOREX_BOT_EXE_URL = "/bot-app/ForexBotsApp.exe"
 
 export function Checkout() {
   const { items, totalPrice, clearCart } = useCartStore()
@@ -30,6 +29,7 @@ export function Checkout() {
   const [processing, setProcessing] = useState(false)
   const [done, setDone] = useState(false)
   const [error, setError] = useState("")
+  const forexBotExeUrl = getForexBotDownloadUrl()
 
   if (items.length === 0 && !done) {
     return (
@@ -195,7 +195,7 @@ export function Checkout() {
 
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <Button asChild className="bg-orange-500 text-white hover:bg-orange-600">
-                <a href={FOREX_BOT_EXE_URL} download className="inline-flex items-center justify-center gap-2">
+                <a href={forexBotExeUrl} download className="inline-flex items-center justify-center gap-2">
                   <Download className="h-4 w-4 shrink-0" />
                   Download ForexBotsApp.exe
                 </a>

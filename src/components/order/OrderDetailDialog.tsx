@@ -13,6 +13,7 @@ import {
   getOrderForUser,
   getLicensesForOrderForUser,
 } from "@/lib/firestore"
+import { getForexBotDownloadUrl } from "@/lib/downloads"
 import { formatPrice } from "@/lib/utils"
 import type { Order, License } from "@/types"
 
@@ -116,7 +117,7 @@ export function OrderDetailDialog({
     : ""
   const totalQty = order?.items.reduce((sum, item) => sum + item.quantity, 0) ?? 0
   const canDownloadApp = order?.status === "paid" || order?.status === "delivered"
-  const forexBotExeUrl = "/bot-app/ForexBotsApp.exe"
+  const forexBotExeUrl = getForexBotDownloadUrl()
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

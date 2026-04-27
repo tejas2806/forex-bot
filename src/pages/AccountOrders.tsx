@@ -4,6 +4,7 @@ import { ChevronRight, Download } from "lucide-react"
 import { useAuthStore } from "@/stores/auth-store"
 import { useOrdersStore } from "@/stores/orders-store"
 import { formatPrice } from "@/lib/utils"
+import { getForexBotDownloadUrl } from "@/lib/downloads"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -18,7 +19,7 @@ export function AccountOrders() {
   const [copyMessage, setCopyMessage] = useState<string | null>(null)
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null)
   const justPaidOrderId = searchParams.get("paid")
-  const forexBotExeUrl = "/bot-app/ForexBotsApp.exe"
+  const forexBotExeUrl = getForexBotDownloadUrl()
 
   // Fetch orders from new schema path: admins/{adminId}/users/{userEmail}/orders
   useEffect(() => {

@@ -87,6 +87,19 @@ export function Home() {
               <p className="mt-3 text-sm text-zinc-300">
                 Sign Up and Claim up to 10,000 USDT in Rewards
               </p>
+              <div className="mt-5 lg:hidden rounded-2xl border border-zinc-800/70 bg-zinc-900/35 p-4">
+                <div className="flex justify-center">
+                  <div className="hero-coin-drop">
+                    <div className="hero-coin-flip">
+                      <img
+                        src={goldCoin}
+                        alt="Gold coin showing trading value"
+                        className="h-44 w-44 object-contain drop-shadow-[0_20px_28px_rgba(249,115,22,0.4)]"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div className="relative hidden lg:block">
@@ -111,7 +124,7 @@ export function Home() {
               </div>
             </div>
           </div>
-          <div className="mt-8 lg:hidden">
+          <div className="mt-8 space-y-4 lg:hidden">
             <HeroCandlestickAnimation />
           </div>
 
