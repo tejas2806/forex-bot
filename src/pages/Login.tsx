@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { Link, useNavigate, useSearchParams } from "react-router-dom"
-import { ArrowLeft, Circle } from "lucide-react"
+import { AlertTriangle, ArrowLeft, Circle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -47,15 +47,48 @@ export function Login() {
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
+  const [touched, setTouched] = useState<{ email: boolean; password: boolean }>({
+    email: false,
+    password: false,
+  })
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({})
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const redirect = searchParams.get("redirect") ?? "/"
   const login = useAuthStore((s) => s.login)
   const loginWithGoogle = useAuthStore((s) => s.loginWithGoogle)
 
+  const validateEmail = (value: string) => {
+    const trimmed = value.trim()
+    if (!trimmed) return "Please fill in this field."
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(trimmed)) return "Please enter a valid email address."
+    return ""
+  }
+
+  const validatePassword = (value: string) => {
+    if (!value.trim()) return "Please fill in this field."
+    if (value.length < 6) return "Password should be at least 6 characters."
+    return ""
+  }
+
+  const validateForm = () => {
+    const nextErrors = {
+      email: validateEmail(email),
+      password: validatePassword(password),
+    }
+    setFieldErrors(nextErrors)
+    return !nextErrors.email && !nextErrors.password
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
+    setTouched({ email: true, password: true })
+    if (!validateForm()) {
+      setError("Please fix the highlighted fields.")
+      return
+    }
     setLoading(true)
     try {
       await login(email, password)
@@ -150,11 +183,25 @@ export function Login() {
                   type="email"
                   placeholder="you@example.com"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="mt-2 h-11 rounded-xl border-zinc-800 bg-zinc-950/70"
+                  onChange={(e) => {
+                    const value = e.target.value
+                    setEmail(value)
+                    if (touched.email) {
+                      setFieldErrors((prev) => ({ ...prev, email: validateEmail(value) }))
+                    }
+                  }}
+                  onBlur={() => {
+                    setTouched((prev) => ({ ...prev, email: true }))
+                    setFieldErrors((prev) => ({ ...prev, email: validateEmail(email) }))
+                  }}
+                  className={`mt-2 h-11 rounded-xl bg-zinc-950/70 ${
+                    touched.email && fieldErrors.email ? "border-red-500/60" : "border-zinc-800"
+                  }`}
                   disabled={loading}
                 />
+                {touched.email && fieldErrors.email && (
+                  <p className="mt-1 text-xs text-red-400">{fieldErrors.email}</p>
+                )}
               </div>
               <div>
                 <Label htmlFor="password" className="uppercase tracking-wide text-zinc-500">
@@ -164,15 +211,45 @@ export function Login() {
                   id="password"
                   type="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="mt-2 h-11 rounded-xl border-zinc-800 bg-zinc-950/70"
+                  onChange={(e) => {
+                    const value = e.target.value
+                    setPassword(value)
+                    if (touched.password) {
+                      setFieldErrors((prev) => ({ ...prev, password: validatePassword(value) }))
+                    }
+                  }}
+                  onBlur={() => {
+                    setTouched((prev) => ({ ...prev, password: true }))
+                    setFieldErrors((prev) => ({ ...prev, password: validatePassword(password) }))
+                  }}
+                  className={`mt-2 h-11 rounded-xl bg-zinc-950/70 ${
+                    touched.password && fieldErrors.password ? "border-red-500/60" : "border-zinc-800"
+                  }`}
                   disabled={loading}
                 />
+                {touched.password && fieldErrors.password && (
+                  <p className="mt-1 text-xs text-red-400">{fieldErrors.password}</p>
+                )}
               </div>
-              {error && <p className="text-sm text-red-400">{error}</p>}
-              <Button type="submit" className="h-11 w-full rounded-xl" disabled={loading}>
+              {error && (
+                <div className="flex items-start gap-2 rounded-xl border border-red-500/35 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                  <p>{error}</p>
+                </div>
+              )}
+              <Button
+                type="submit"
+                className="h-11 w-full rounded-xl bg-orange-500 text-white hover:bg-orange-600"
+                disabled={loading}
+              >
                 {loading ? "Signing in..." : "Continue"}
               </Button>
+              <div className="relative py-1">
+                <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-zinc-800" />
+                <p className="relative mx-auto w-fit bg-zinc-950/70 px-2 text-xs font-medium uppercase tracking-wider text-zinc-500">
+                  OR
+                </p>
+              </div>
               <div className="pt-1">
                 <Button
                   type="button"
