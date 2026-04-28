@@ -1,10 +1,18 @@
+import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { Package, ShoppingBag, DollarSign, Activity, ArrowUpRight, ArrowDownRight } from "lucide-react"
 import { useProductsStore } from "@/stores/products-store"
 import { useOrdersStore } from "@/stores/orders-store"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { formatPrice } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { BotCsvPerformanceChart } from "@/components/analytics/BotCsvPerformanceChart"
+import {
+  DEFAULT_ADMIN_EMAIL,
+  getUsdtPaymentSettings,
+  setUsdtPaymentSettings,
+} from "@/lib/firestore"
 
 export function AdminDashboard() {
   const products = useProductsStore((s) => s.products)
@@ -16,6 +24,58 @@ export function AdminDashboard() {
 
   const completedOrders = orders.filter((o) => o.status === "delivered").length
   const pendingOrders = orders.filter((o) => o.status === "pending" || o.status === "paid").length
+  const [qrImageUrl, setQrImageUrl] = useState("")
+  const [walletAddress, setWalletAddress] = useState("")
+  const [network, setNetwork] = useState("TRC20")
+  const [note, setNote] = useState("")
+  const [savingPayment, setSavingPayment] = useState(false)
+  const [paymentMsg, setPaymentMsg] = useState("")
+
+  useEffect(() => {
+    getUsdtPaymentSettings(DEFAULT_ADMIN_EMAIL)
+      .then((settings) => {
+        setQrImageUrl(settings.qrImageUrl ?? "")
+        setWalletAddress(settings.walletAddress ?? "")
+        setNetwork(settings.network ?? "TRC20")
+        setNote(settings.note ?? "")
+      })
+      .catch(() => {
+        // Keep defaults if fetch fails.
+      })
+  }, [])
+
+  const onQrFileChange = (file?: File) => {
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      const result = typeof reader.result === "string" ? reader.result : ""
+      setQrImageUrl(result)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const saveUsdtSettings = async () => {
+    setPaymentMsg("")
+    if (!qrImageUrl.trim()) {
+      setPaymentMsg("Please upload a QR image first.")
+      return
+    }
+    setSavingPayment(true)
+    try {
+      await setUsdtPaymentSettings(DEFAULT_ADMIN_EMAIL, {
+        enabled: true,
+        qrImageUrl: qrImageUrl.trim(),
+        walletAddress: walletAddress.trim(),
+        network: network.trim(),
+        note: note.trim(),
+      })
+      setPaymentMsg("USDT payment settings saved successfully.")
+    } catch {
+      setPaymentMsg("Failed to save USDT payment settings.")
+    } finally {
+      setSavingPayment(false)
+    }
+  }
 
   const stats: {
     label: string
@@ -43,7 +103,7 @@ export function AdminDashboard() {
     },
     {
       label: "Total revenue",
-      value: formatPrice(totalRevenue),
+      value: `${totalRevenue.toFixed(2)} USDT`,
       icon: DollarSign,
       helper: "Demo data only",
       tone: "success",
@@ -159,7 +219,7 @@ export function AdminDashboard() {
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-medium text-zinc-50">
-                        {formatPrice(order.total)}
+                        {order.total.toFixed(2)} USDT
                       </p>
                       <p className="text-xs capitalize text-zinc-500">{order.status}</p>
                     </div>
@@ -201,6 +261,80 @@ export function AdminDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      <Card className="border-zinc-800 bg-zinc-900/60">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base text-zinc-100">USDT payment QR setup</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 lg:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Upload QR code</Label>
+              <Input
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={(e) => onQrFileChange(e.target.files?.[0])}
+              />
+              <p className="text-xs text-zinc-500">
+                Buyers will scan this QR during checkout.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label>Wallet address (optional)</Label>
+              <Input
+                value={walletAddress}
+                onChange={(e) => setWalletAddress(e.target.value)}
+                placeholder="Enter your USDT receiving wallet address"
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Network</Label>
+              <Input
+                value={network}
+                onChange={(e) => setNetwork(e.target.value)}
+                placeholder="e.g. TRC20 / ERC20 / BEP20"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Buyer note (optional)</Label>
+              <Input
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="e.g. Send exact amount and keep transaction screenshot."
+              />
+            </div>
+          </div>
+
+          {qrImageUrl && (
+            <div className="rounded-xl border border-zinc-800 bg-zinc-950/60 p-3">
+              <p className="mb-2 text-xs uppercase tracking-wide text-zinc-500">QR preview</p>
+              <img
+                src={qrImageUrl}
+                alt="USDT QR code preview"
+                className="h-56 w-56 rounded-lg border border-zinc-800 object-contain"
+              />
+            </div>
+          )}
+
+          {paymentMsg && (
+            <p className={`text-sm ${paymentMsg.includes("successfully") ? "text-emerald-400" : "text-red-400"}`}>
+              {paymentMsg}
+            </p>
+          )}
+
+          <Button
+            type="button"
+            className="bg-orange-500 text-white hover:bg-orange-600"
+            onClick={() => void saveUsdtSettings()}
+            disabled={savingPayment}
+          >
+            {savingPayment ? "Saving..." : "Save USDT payment settings"}
+          </Button>
+        </CardContent>
+      </Card>
 
       <BotCsvPerformanceChart initialBot="1" />
     </div>

@@ -1,10 +1,8 @@
 import { useEffect, useState } from "react"
 import { Link, useSearchParams } from "react-router-dom"
-import { ChevronRight, Download } from "lucide-react"
+import { ChevronRight } from "lucide-react"
 import { useAuthStore } from "@/stores/auth-store"
 import { useOrdersStore } from "@/stores/orders-store"
-import { formatPrice } from "@/lib/utils"
-import { getForexBotDownloadUrl } from "@/lib/downloads"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -19,7 +17,9 @@ export function AccountOrders() {
   const [copyMessage, setCopyMessage] = useState<string | null>(null)
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null)
   const justPaidOrderId = searchParams.get("paid")
-  const forexBotExeUrl = getForexBotDownloadUrl()
+  const formatUsdt = (value: number) => `${value.toFixed(2)} USDT`
+  const prettyPaymentMethod = (value: string) =>
+    value === "usdt_qr" ? "USDT (QR)" : value.replace(/_/g, " ")
 
   // Fetch orders from new schema path: admins/{adminId}/users/{userEmail}/orders
   useEffect(() => {
@@ -58,17 +58,11 @@ export function AccountOrders() {
         Paid orders include license keys for your bot executables (Python + GUI). Copy the key to activate in-app.
       </p>
       {justPaidOrderId && (
-        <Card className="mb-6 border-emerald-500/30 bg-emerald-500/10">
-          <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4">
-            <p className="text-sm text-emerald-200">
-              Payment received for order <span className="font-semibold">#{justPaidOrderId.slice(-8).toUpperCase()}</span>. Download your bot app below.
+        <Card className="mb-6 border-amber-500/30 bg-amber-500/10">
+          <CardContent className="py-4">
+            <p className="text-sm text-amber-200">
+              Order <span className="font-semibold">#{justPaidOrderId.slice(-8).toUpperCase()}</span> submitted. Your payment is awaiting admin verification. License key and bot download will appear after it is marked paid.
             </p>
-            <Button asChild variant="outline" className="border-emerald-400/40 text-emerald-200 hover:bg-emerald-500/15">
-              <a href={forexBotExeUrl} download className="inline-flex items-center justify-center gap-2">
-                <Download className="h-4 w-4 shrink-0" />
-                Download BotsApp.exe
-              </a>
-            </Button>
           </CardContent>
         </Card>
       )}
@@ -151,11 +145,11 @@ export function AccountOrders() {
                       <div className="space-y-2">
                         <div>
                           <p className="text-xs uppercase tracking-wide text-zinc-500">Payment mode</p>
-                          <p className="text-sm capitalize text-zinc-100">{order.paymentMethod}</p>
+                          <p className="text-sm text-zinc-100">{prettyPaymentMethod(order.paymentMethod)}</p>
                         </div>
                         <div>
                           <p className="text-xs uppercase tracking-wide text-zinc-500">Payment value</p>
-                          <p className="text-sm font-semibold text-zinc-100">{formatPrice(order.total)}</p>
+                          <p className="text-sm font-semibold text-zinc-100">{formatUsdt(order.total)}</p>
                         </div>
                         <div>
                           <p className="text-xs uppercase tracking-wide text-zinc-500">Date & time</p>

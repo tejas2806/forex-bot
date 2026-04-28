@@ -1,21 +1,18 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
-import { CreditCard, Wallet, Banknote, Download, CheckCircle2, Sparkles } from "lucide-react"
+import { Download, CheckCircle2, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useCartStore } from "@/stores/cart-store"
 import { useAuthStore } from "@/stores/auth-store"
 import { useOrdersStore } from "@/stores/orders-store"
-import { formatPrice } from "@/lib/utils"
 import { getForexBotDownloadUrl } from "@/lib/downloads"
 import {
-  createRazorpayOrder,
-  getPaymentApiUrl,
-  getRazorpayKeyId,
-  loadRazorpayScript,
-  verifyRazorpayPayment,
-} from "@/lib/payment"
+  DEFAULT_ADMIN_EMAIL,
+  getUsdtPaymentSettings,
+  type UsdtPaymentSettings,
+} from "@/lib/firestore"
 import type { PaymentMethod } from "@/types"
 
 export function Checkout() {
@@ -24,12 +21,21 @@ export function Checkout() {
   const addOrder = useOrdersStore((s) => s.addOrder)
   const navigate = useNavigate()
 
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("card")
+  const [paymentMethod] = useState<PaymentMethod>("usdt_qr")
   const [address, setAddress] = useState("")
   const [processing, setProcessing] = useState(false)
   const [done, setDone] = useState(false)
   const [error, setError] = useState("")
+  const [usdtSettings, setUsdtSettings] = useState<UsdtPaymentSettings>({
+    enabled: false,
+  })
   const forexBotExeUrl = getForexBotDownloadUrl()
+
+  useEffect(() => {
+    getUsdtPaymentSettings(DEFAULT_ADMIN_EMAIL)
+      .then((settings) => setUsdtSettings(settings))
+      .catch(() => setUsdtSettings({ enabled: false }))
+  }, [])
 
   if (items.length === 0 && !done) {
     return (
@@ -60,106 +66,20 @@ export function Checkout() {
       createdAt: new Date().toISOString(),
       shippingAddress: address || "Email for licenses / delivery",
     }
-    const useRazorpay =
-      paymentMethod === "card" && getPaymentApiUrl() && getRazorpayKeyId()
-    if (useRazorpay) {
-      const pendingOrder = await addOrder({
-        ...orderPayload,
-        status: "pending",
-      })
-      const scriptLoaded = await loadRazorpayScript()
-      if (!scriptLoaded) {
-        setError("Failed to load Razorpay checkout script.")
-        setProcessing(false)
-        return
-      }
-
-      const orderResult = await createRazorpayOrder({
-        orderId: pendingOrder.id,
-        amountPaise: Math.round(totalPrice() * 100),
-        currency: "INR",
-        userEmail: user.email,
-        userId: user.id,
-        productNames: items.map((i) => i.product.name),
-      })
-      if ("error" in orderResult) {
-        setError(orderResult.error)
-        setProcessing(false)
-        return
-      }
-
-      const keyId = getRazorpayKeyId()
-      if (!keyId) {
-        setError("Razorpay key is not configured.")
-        setProcessing(false)
-        return
-      }
-
-      const RazorpayConstructor = (window as Window & { Razorpay?: new (options: unknown) => { open: () => void } }).Razorpay
-      if (!RazorpayConstructor) {
-        setError("Razorpay checkout is unavailable.")
-        setProcessing(false)
-        return
-      }
-
-      const razorpay = new RazorpayConstructor({
-        key: keyId,
-        amount: orderResult.amount,
-        currency: orderResult.currency,
-        name: "AlphaForge",
-        description: "Bot purchase",
-        order_id: orderResult.razorpayOrderId,
-        prefill: {
-          name: user.name,
-          email: user.email,
-        },
-        notes: {
-          appOrderId: pendingOrder.id,
-        },
-        handler: async (response: {
-          razorpay_order_id: string
-          razorpay_payment_id: string
-          razorpay_signature: string
-        }) => {
-          const verifyResult = await verifyRazorpayPayment({
-            orderId: pendingOrder.id,
-            razorpayOrderId: response.razorpay_order_id,
-            razorpayPaymentId: response.razorpay_payment_id,
-            razorpaySignature: response.razorpay_signature,
-          })
-          if ("error" in verifyResult || !verifyResult.success) {
-            setError(
-              "error" in verifyResult
-                ? verifyResult.error
-                : verifyResult.message || "Payment verification failed."
-            )
-            setProcessing(false)
-            return
-          }
-          clearCart()
-          setProcessing(false)
-          setDone(true)
-          navigate(`/account/orders?paid=${pendingOrder.id}`)
-        },
-        modal: {
-          ondismiss: () => {
-            setProcessing(false)
-          },
-        },
-        theme: { color: "#f97316" },
-      } as unknown as Record<string, unknown>)
-
-      razorpay.open()
+    if (!usdtSettings.enabled || !usdtSettings.qrImageUrl) {
+      setError("USDT payment QR is not configured yet. Please contact admin.")
+      setProcessing(false)
       return
     }
-    await new Promise((r) => setTimeout(r, 800))
-    await addOrder({
+
+    const pendingOrder = await addOrder({
       ...orderPayload,
-      status: "paid",
+      status: "pending",
     })
-    clearCart()
     setProcessing(false)
+    clearCart()
     setDone(true)
+    navigate(`/account/orders?paid=${pendingOrder.id}`)
   }
 
   if (done) {
@@ -176,11 +96,11 @@ export function Checkout() {
               <div>
                 <p className="inline-flex items-center gap-1 rounded-full border border-zinc-700 bg-zinc-900/70 px-2.5 py-1 text-xs font-medium text-zinc-300">
                   <Sparkles className="h-3.5 w-3.5 text-orange-300" />
-                  Payment confirmed
+                  Order created
                 </p>
                 <h2 className="mt-3 font-display text-3xl font-semibold text-zinc-100">Order placed successfully</h2>
                 <p className="mt-2 text-zinc-300">
-                  Thank you for your purchase. Your license and app download are now ready.
+                  Your USDT order is pending admin verification.
                 </p>
               </div>
             </div>
@@ -189,7 +109,7 @@ export function Checkout() {
           <div className="p-6 md:p-8">
             <div className="rounded-xl border border-zinc-800 bg-zinc-950/50 p-4 text-sm text-zinc-400">
               <p>
-                Next step: download the app and open <span className="text-zinc-200">My Orders</span> anytime to copy your license key.
+                You can track status in <span className="text-zinc-200">My Orders</span>. Download access and license keys activate after payment verification.
               </p>
             </div>
 
@@ -209,12 +129,6 @@ export function Checkout() {
       </div>
     )
   }
-
-  const paymentOptions: { value: PaymentMethod; label: string; icon: React.ReactNode }[] = [
-    { value: "card", label: "Razorpay (Card/UPI/Netbanking)", icon: <CreditCard className="h-4 w-4" /> },
-    { value: "paypal", label: "PayPal", icon: <Wallet className="h-4 w-4" /> },
-    { value: "cod", label: "Cash on delivery", icon: <Banknote className="h-4 w-4" /> },
-  ]
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -240,32 +154,39 @@ export function Checkout() {
               />
             </div>
 
-            <div>
-              <Label>Payment method</Label>
-              <div className="mt-2 space-y-2">
-                {paymentOptions.map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => setPaymentMethod(opt.value)}
-                    className={`flex w-full items-center gap-3 rounded-lg border p-4 text-left transition-colors ${
-                      paymentMethod === opt.value
-                        ? "border-orange-500 bg-orange-500/10 text-zinc-100"
-                        : "border-zinc-700 bg-zinc-900/50 text-zinc-400 hover:border-zinc-600"
-                    }`}
-                  >
-                    {opt.icon}
-                    <span>{opt.label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {paymentMethod === "card" && (
-              <p className="text-sm text-zinc-500">
-                Secure checkout opens Razorpay popup for Card / UPI / Netbanking.
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
+              <p className="text-sm font-medium text-zinc-200">Payment method: USDT QR</p>
+              <p className="mt-1 text-xs text-zinc-500">
+                Scan the QR below and send the exact order amount in USDT.
               </p>
-            )}
+              {usdtSettings.network && (
+                <p className="mt-2 text-xs text-zinc-400">
+                  Network: <span className="font-medium text-zinc-200">{usdtSettings.network}</span>
+                </p>
+              )}
+              {usdtSettings.walletAddress && (
+                <p className="mt-1 break-all text-xs text-zinc-400">
+                  Wallet: <span className="font-medium text-zinc-200">{usdtSettings.walletAddress}</span>
+                </p>
+              )}
+              {usdtSettings.note && (
+                <p className="mt-1 text-xs text-zinc-500">{usdtSettings.note}</p>
+              )}
+            </div>
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
+              {!usdtSettings.qrImageUrl ? (
+                <p className="text-sm text-amber-400">USDT QR is not available yet. Please contact admin.</p>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-xs uppercase tracking-wide text-zinc-500">Scan to pay</p>
+                  <img
+                    src={usdtSettings.qrImageUrl}
+                    alt="USDT payment QR code"
+                    className="h-56 w-56 rounded-lg border border-zinc-800 bg-zinc-950 object-contain"
+                  />
+                </div>
+              )}
+            </div>
             {error && <p className="text-sm text-red-400">{error}</p>}
           </div>
 
@@ -273,14 +194,14 @@ export function Checkout() {
             <div className="rounded-xl border border-zinc-800 bg-card p-6 sticky top-24">
               <h3 className="font-display text-lg font-semibold text-zinc-100">Order summary</h3>
               <p className="text-zinc-500 mt-1">{items.length} item(s)</p>
-              <p className="mt-4 text-2xl font-bold text-zinc-100">{formatPrice(totalPrice())}</p>
+              <p className="mt-4 text-2xl font-bold text-zinc-100">{totalPrice().toFixed(2)} USDT</p>
               <Button
                 type="submit"
                 className="mt-6 w-full bg-orange-500 text-white hover:bg-orange-600"
                 size="lg"
-                disabled={processing}
+                disabled={processing || !usdtSettings.qrImageUrl}
               >
-                {processing ? "Processing…" : `Pay ${formatPrice(totalPrice())}`}
+                {processing ? "Placing order…" : `I have paid ${totalPrice().toFixed(2)} USDT`}
               </Button>
             </div>
           </div>

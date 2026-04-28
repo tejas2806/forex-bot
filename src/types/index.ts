@@ -47,7 +47,7 @@ export interface CartItem {
   unitPrice: number
 }
 
-export type PaymentMethod = "card" | "paypal" | "cod"
+export type PaymentMethod = "usdt_qr" | "card" | "paypal" | "cod"
 
 export interface Order {
   id: string

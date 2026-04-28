@@ -14,7 +14,6 @@ import {
   getLicensesForOrderForUser,
 } from "@/lib/firestore"
 import { getForexBotDownloadUrl } from "@/lib/downloads"
-import { formatPrice } from "@/lib/utils"
 import type { Order, License } from "@/types"
 
 function LicenseRow({ license, onCopy }: { license: License; onCopy: (key: string) => void }) {
@@ -116,8 +115,12 @@ export function OrderDetailDialog({
       })
     : ""
   const totalQty = order?.items.reduce((sum, item) => sum + item.quantity, 0) ?? 0
-  const canDownloadApp = order?.status === "paid" || order?.status === "delivered"
+  const isPaymentVerified = order?.status === "paid"
+  const canDownloadApp = isPaymentVerified
   const forexBotExeUrl = getForexBotDownloadUrl()
+  const formatUsdt = (value: number) => `${value.toFixed(2)} USDT`
+  const prettyPaymentMethod = (value: string) =>
+    value === "usdt_qr" ? "USDT (QR)" : value.replace(/_/g, " ")
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -171,11 +174,11 @@ export function OrderDetailDialog({
               </div>
               <div className="space-y-2">
                 <p className="text-xs uppercase tracking-wide text-zinc-500">Payment mode</p>
-                <p className="capitalize text-zinc-100">{order.paymentMethod}</p>
+                <p className="text-zinc-100">{prettyPaymentMethod(order.paymentMethod)}</p>
               </div>
               <div className="space-y-2">
                 <p className="text-xs uppercase tracking-wide text-zinc-500">Payment value</p>
-                <p className="font-semibold text-zinc-100">{formatPrice(order.total)}</p>
+                <p className="font-semibold text-zinc-100">{formatUsdt(order.total)}</p>
               </div>
             </div>
 
@@ -199,7 +202,7 @@ export function OrderDetailDialog({
                       {item.planLabel ? ` · ${item.planLabel}` : ""}
                     </span>
                     <span className="shrink-0">
-                      {formatPrice((item.unitPrice ?? item.product.price) * item.quantity)}
+                      {formatUsdt((item.unitPrice ?? item.product.price) * item.quantity)}
                     </span>
                   </li>
                 ))}
@@ -224,26 +227,32 @@ export function OrderDetailDialog({
                 <CreditCard className="h-4 w-4" />
                 Total
               </p>
-              <p className="text-lg font-semibold text-zinc-100">{formatPrice(order.total)}</p>
+              <p className="text-lg font-semibold text-zinc-100">{formatUsdt(order.total)}</p>
             </div>
 
-            <div>
-              <p className="flex items-center gap-2 font-medium text-zinc-300 mb-2">
-                <Key className="h-4 w-4" />
-                License keys
-              </p>
-              {licenses.length === 0 ? (
-                <p className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3 text-zinc-400">
-                  No license keys generated for this order yet.
+            {isPaymentVerified ? (
+              <div>
+                <p className="flex items-center gap-2 font-medium text-zinc-300 mb-2">
+                  <Key className="h-4 w-4" />
+                  License keys
                 </p>
-              ) : (
-                <div className="space-y-2">
-                  {licenses.map((lic) => (
-                    <LicenseRow key={lic.id} license={lic} onCopy={handleCopy} />
-                  ))}
-                </div>
-              )}
-            </div>
+                {licenses.length === 0 ? (
+                  <p className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3 text-zinc-400">
+                    No license keys generated for this order yet.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {licenses.map((lic) => (
+                      <LicenseRow key={lic.id} license={lic} onCopy={handleCopy} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="rounded-lg border border-amber-500/25 bg-amber-500/10 p-3 text-sm text-amber-200">
+                Payment is pending admin verification. License key and bot download will be available after status is marked paid.
+              </div>
+            )}
 
             {canDownloadApp && (
               <div>

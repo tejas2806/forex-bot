@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { useOrdersStore } from "@/stores/orders-store"
-import { formatPrice } from "@/lib/utils"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 import {
   Select,
   SelectContent,
@@ -9,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
@@ -29,14 +30,48 @@ export function AdminOrders() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)
   const [licenses, setLicenses] = useState<License[]>([])
+  const [statusFilter, setStatusFilter] = useState<"all" | Order["status"]>("all")
+  const [search, setSearch] = useState("")
+  const [sortBy, setSortBy] = useState<"latest" | "oldest" | "amount_desc" | "amount_asc">("latest")
 
-  const statusOptions: Order["status"][] = ["pending", "paid", "shipped", "delivered", "cancelled"]
+  const statusOptions: Order["status"][] = ["pending", "paid", "cancelled"]
   const totalQty = selectedOrder?.items.reduce((sum, item) => sum + item.quantity, 0) ?? 0
+  const formatUsdt = (value: number) => `${value.toFixed(2)} USDT`
+  const prettyPaymentMethod = (value: string) =>
+    value === "usdt_qr" ? "USDT (QR)" : value.replace(/_/g, " ")
+  const filterTabs: Array<"all" | Order["status"]> = ["all", ...statusOptions]
 
   const openDetails = (order: Order) => {
     setSelectedOrder(order)
     setDetailOpen(true)
   }
+
+  const filteredAndSortedOrders = orders
+    .filter((order) => {
+      if (statusFilter !== "all" && order.status !== statusFilter) return false
+      if (!search.trim()) return true
+      const query = search.trim().toLowerCase()
+      const productNames = order.items.map((i) => i.product.name.toLowerCase()).join(" ")
+      return (
+        order.id.toLowerCase().includes(query) ||
+        (order.userName ?? "").toLowerCase().includes(query) ||
+        (order.userEmail ?? "").toLowerCase().includes(query) ||
+        productNames.includes(query)
+      )
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case "oldest":
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        case "amount_desc":
+          return b.total - a.total
+        case "amount_asc":
+          return a.total - b.total
+        case "latest":
+        default:
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      }
+    })
 
   useEffect(() => {
     if (!detailOpen || !selectedOrder) {
@@ -58,15 +93,53 @@ export function AdminOrders() {
     <div>
       <h1 className="font-display text-3xl font-bold text-zinc-100 mb-8">Orders</h1>
 
-      {orders.length === 0 ? (
+      <Card className="mb-5 border-zinc-800 bg-zinc-900/50">
+        <CardContent className="pt-6 space-y-4">
+          <div className="flex flex-wrap items-center gap-2">
+            {filterTabs.map((tab) => (
+              <Button
+                key={tab}
+                type="button"
+                size="sm"
+                variant={statusFilter === tab ? "default" : "outline"}
+                className={statusFilter === tab ? "bg-orange-500 text-white hover:bg-orange-600" : ""}
+                onClick={() => setStatusFilter(tab)}
+              >
+                {tab === "all" ? "All" : tab[0].toUpperCase() + tab.slice(1)}
+              </Button>
+            ))}
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_220px]">
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by order ID, buyer, email, product..."
+            />
+            <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Sort orders" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="latest">Latest first</SelectItem>
+                <SelectItem value="oldest">Oldest first</SelectItem>
+                <SelectItem value="amount_desc">Highest amount</SelectItem>
+                <SelectItem value="amount_asc">Lowest amount</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      {filteredAndSortedOrders.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-zinc-500">
-            No orders yet.
+            {orders.length === 0 ? "No orders yet." : "No orders match your filters."}
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-4">
-          {orders.map((order) => (
+          {filteredAndSortedOrders.map((order) => (
             <Card
               key={order.id}
               className="cursor-pointer transition-colors hover:border-zinc-600"
@@ -124,11 +197,11 @@ export function AdminOrders() {
                   <div className="space-y-2">
                     <div>
                       <p className="text-xs uppercase tracking-wide text-zinc-500">Payment mode</p>
-                      <p className="text-sm capitalize text-zinc-100">{order.paymentMethod}</p>
+                      <p className="text-sm text-zinc-100">{prettyPaymentMethod(order.paymentMethod)}</p>
                     </div>
                     <div>
                       <p className="text-xs uppercase tracking-wide text-zinc-500">Payment value</p>
-                      <p className="text-sm font-semibold text-zinc-100">{formatPrice(order.total)}</p>
+                      <p className="text-sm font-semibold text-zinc-100">{formatUsdt(order.total)}</p>
                     </div>
                     <div>
                       <p className="text-xs uppercase tracking-wide text-zinc-500">Date & time</p>
@@ -186,11 +259,11 @@ export function AdminOrders() {
                 </div>
                 <div className="space-y-2">
                   <p className="text-xs uppercase tracking-wide text-zinc-500">Payment mode</p>
-                  <p className="capitalize text-zinc-100">{selectedOrder.paymentMethod}</p>
+                  <p className="text-zinc-100">{prettyPaymentMethod(selectedOrder.paymentMethod)}</p>
                 </div>
                 <div className="space-y-2">
                   <p className="text-xs uppercase tracking-wide text-zinc-500">Payment value</p>
-                  <p className="font-semibold text-zinc-100">{formatPrice(selectedOrder.total)}</p>
+                  <p className="font-semibold text-zinc-100">{formatUsdt(selectedOrder.total)}</p>
                 </div>
               </div>
 
@@ -204,7 +277,7 @@ export function AdminOrders() {
                               {item.planLabel ? ` · ${item.planLabel}` : ""}
                       </span>
                       <span className="text-zinc-400">
-                              {formatPrice((item.unitPrice ?? item.product.price) * item.quantity)}
+                              {formatUsdt((item.unitPrice ?? item.product.price) * item.quantity)}
                       </span>
                     </li>
                   ))}

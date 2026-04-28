@@ -36,6 +36,7 @@ const PRODUCTS_SUBCOLLECTION = "products"
 const ORDERS_SUBCOLLECTION = "orders"
 const LICENSES_SUBCOLLECTION = "licenses"
 const PERFORMANCE_SUBCOLLECTION = "performance_data"
+const PAYMENT_SETTINGS_FIELD = "paymentSettings"
 
 /** Default admin email for this app (root of data). */
 export const DEFAULT_ADMIN_EMAIL = "admin@alphaforge.io"
@@ -170,6 +171,15 @@ export interface UserRecord extends Pick<User, "id" | "email" | "name" | "role">
   orders?: UserOrderEntry[]
 }
 
+export interface UsdtPaymentSettings {
+  enabled: boolean
+  qrImageUrl?: string
+  walletAddress?: string
+  network?: string
+  note?: string
+  updatedAt?: string
+}
+
 /** User info stored in Firestore (all fields for display/admin). */
 export function userInfoToFirestore(u: UserRecord): DocumentData {
   return {
@@ -212,6 +222,45 @@ export async function syncUserInfo(adminEmail: string, user: User): Promise<void
     createdAt: new Date().toISOString(),
   }
   await setUser(adminEmail, record)
+}
+
+// ---------- Admin payment settings ----------
+
+export async function getUsdtPaymentSettings(adminEmail: string): Promise<UsdtPaymentSettings> {
+  const ref = getAdminRef(adminEmail)
+  const snap = await getDoc(ref)
+  if (!snap.exists()) return { enabled: false }
+  const data = snap.data() as Record<string, unknown>
+  const raw = (data[PAYMENT_SETTINGS_FIELD] ?? {}) as Record<string, unknown>
+  return {
+    enabled: raw.enabled === true,
+    ...(typeof raw.qrImageUrl === "string" && { qrImageUrl: raw.qrImageUrl }),
+    ...(typeof raw.walletAddress === "string" && { walletAddress: raw.walletAddress }),
+    ...(typeof raw.network === "string" && { network: raw.network }),
+    ...(typeof raw.note === "string" && { note: raw.note }),
+    ...(typeof raw.updatedAt === "string" && { updatedAt: raw.updatedAt }),
+  }
+}
+
+export async function setUsdtPaymentSettings(
+  adminEmail: string,
+  settings: UsdtPaymentSettings
+): Promise<void> {
+  const ref = getAdminRef(adminEmail)
+  await setDoc(
+    ref,
+    {
+      [PAYMENT_SETTINGS_FIELD]: {
+        enabled: settings.enabled,
+        ...(settings.qrImageUrl != null && { qrImageUrl: settings.qrImageUrl }),
+        ...(settings.walletAddress != null && { walletAddress: settings.walletAddress }),
+        ...(settings.network != null && { network: settings.network }),
+        ...(settings.note != null && { note: settings.note }),
+        updatedAt: new Date().toISOString(),
+      },
+    },
+    { merge: true }
+  )
 }
 
 /** Append an order to the user's document (which products they ordered + orderID). */
