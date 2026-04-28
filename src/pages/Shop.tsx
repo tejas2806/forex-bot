@@ -74,7 +74,9 @@ export function Shop() {
             >
               Featured
             </Button>
-            {categories.map((cat) => (
+            {categories
+              .filter((cat) => cat.slug !== "trading-bots")
+              .map((cat) => (
               <Button
                 key={cat.id}
                 variant={category === cat.slug ? "default" : "outline"}
