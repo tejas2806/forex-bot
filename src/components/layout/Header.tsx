@@ -24,6 +24,7 @@ import {
 
 export function Header() {
   const totalItems = useCartStore((s) => s.totalItems())
+  const clearCart = useCartStore((s) => s.clearCart)
   const { user, logout } = useAuthStore()
   const navigate = useNavigate()
   const [search, setSearch] = useState("")
@@ -171,8 +172,9 @@ export function Header() {
                 )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  onClick={() => {
-                    logout()
+                  onClick={async () => {
+                    clearCart()
+                    await logout()
                     navigate("/")
                   }}
                   className="text-red-400 focus:text-red-400"
