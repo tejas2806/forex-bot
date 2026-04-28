@@ -1,11 +1,12 @@
 import { useParams, Link } from "react-router-dom"
 import { ShoppingCart, ArrowLeft } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useProductsStore } from "@/stores/products-store"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { formatPrice } from "@/lib/utils"
 import { useCartStore } from "@/stores/cart-store"
+import { useAuthStore } from "@/stores/auth-store"
 import type { ProductPlan } from "@/types"
 
 export function ProductDetail() {
@@ -14,7 +15,21 @@ export function ProductDetail() {
   const productsLoaded = useProductsStore((s) => s.productsLoaded)
   const product = slug ? getBySlug(slug) : undefined
   const addItem = useCartStore((s) => s.addItem)
+  const user = useAuthStore((s) => s.user)
   const [selectedPlanId, setSelectedPlanId] = useState<string>("")
+  const [loginAlert, setLoginAlert] = useState("")
+  const [showLoginAlert, setShowLoginAlert] = useState(false)
+
+  useEffect(() => {
+    if (!loginAlert) return
+    setShowLoginAlert(true)
+    const hideTimer = window.setTimeout(() => setShowLoginAlert(false), 2200)
+    const clearTimer = window.setTimeout(() => setLoginAlert(""), 2800)
+    return () => {
+      window.clearTimeout(hideTimer)
+      window.clearTimeout(clearTimer)
+    }
+  }, [loginAlert])
 
   if (!productsLoaded) {
     return (
@@ -105,7 +120,14 @@ export function ProductDetail() {
             <Button
               size="lg"
               className="h-11 bg-orange-500 px-6 text-white transition-all hover:-translate-y-0.5 hover:bg-orange-600"
-              onClick={() => addItem(product, 1, selectedPlan as ProductPlan | undefined)}
+              onClick={() => {
+                if (!user) {
+                  setLoginAlert("Please log in first to add this product to cart.")
+                  return
+                }
+                setLoginAlert("")
+                addItem(product, 1, selectedPlan as ProductPlan | undefined)
+              }}
               disabled={!product.inStock}
             >
               <ShoppingCart className="h-5 w-5 mr-2" />
@@ -118,6 +140,15 @@ export function ProductDetail() {
               <span className="text-sm text-zinc-500 self-center">Out of stock</span>
             )}
           </div>
+          {loginAlert && (
+            <div
+              className={`mt-3 rounded-lg border border-amber-500/35 bg-amber-500/10 px-3 py-2 text-sm text-amber-200 transition-all duration-500 ${
+                showLoginAlert ? "translate-y-0 opacity-100" : "-translate-y-1 opacity-0"
+              }`}
+            >
+              {loginAlert}
+            </div>
+          )}
         </div>
       </div>
     </div>

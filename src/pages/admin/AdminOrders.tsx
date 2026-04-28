@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { useSearchParams } from "react-router-dom"
 import { useOrdersStore } from "@/stores/orders-store"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -25,6 +26,7 @@ import {
 import type { License, Order } from "@/types"
 
 export function AdminOrders() {
+  const [searchParams, setSearchParams] = useSearchParams()
   const orders = useOrdersStore((s) => s.orders)
   const updateOrderStatus = useOrdersStore((s) => s.updateOrderStatus)
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
@@ -88,6 +90,15 @@ export function AdminOrders() {
       .then((data) => setLicenses(data))
       .catch(() => setLicenses([]))
   }, [detailOpen, selectedOrder])
+
+  useEffect(() => {
+    const orderId = searchParams.get("orderId")
+    if (!orderId) return
+    const target = orders.find((order) => order.id === orderId)
+    if (!target) return
+    setSelectedOrder(target)
+    setDetailOpen(true)
+  }, [orders, searchParams])
 
   return (
     <div>
@@ -215,7 +226,20 @@ export function AdminOrders() {
         </div>
       )}
 
-      <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
+      <Dialog
+        open={detailOpen}
+        onOpenChange={(open) => {
+          setDetailOpen(open)
+          if (!open) {
+            setSelectedOrder(null)
+            setSearchParams((prev) => {
+              const next = new URLSearchParams(prev)
+              next.delete("orderId")
+              return next
+            })
+          }
+        }}
+      >
         <DialogContent className="max-w-2xl border-zinc-800 bg-zinc-900">
           <DialogHeader>
             <DialogTitle>

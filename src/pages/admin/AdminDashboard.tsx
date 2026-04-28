@@ -201,9 +201,10 @@ export function AdminDashboard() {
             ) : (
               <div className="space-y-2 text-sm">
                 {orders.slice(0, 5).map((order) => (
-                  <div
+                  <Link
                     key={order.id}
-                    className="flex items-center justify-between rounded-lg border border-zinc-800/80 bg-zinc-900/80 px-3 py-2"
+                    to={`/admin/orders?orderId=${encodeURIComponent(order.id)}`}
+                    className="flex items-center justify-between rounded-lg border border-zinc-800/80 bg-zinc-900/80 px-3 py-2 transition-colors hover:border-orange-500/50 hover:bg-zinc-900"
                   >
                     <div className="min-w-0">
                       <p className="truncate text-zinc-100">
@@ -223,7 +224,7 @@ export function AdminDashboard() {
                       </p>
                       <p className="text-xs capitalize text-zinc-500">{order.status}</p>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             )}

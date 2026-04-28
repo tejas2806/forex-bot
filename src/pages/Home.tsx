@@ -15,8 +15,17 @@ export function Home() {
   const products = useProductsStore((s) => s.products)
   const productsLoaded = useProductsStore((s) => s.productsLoaded)
   const featured = products.filter((p) => p.featured).slice(0, 4)
+  const featuredGridCols =
+    featured.length >= 4
+      ? "lg:grid-cols-4"
+      : featured.length === 3
+        ? "lg:grid-cols-3"
+        : featured.length === 2
+          ? "lg:grid-cols-2"
+          : "lg:grid-cols-1"
   const featuredSectionRef = useRef<HTMLDivElement | null>(null)
   const [showFeaturedMotion, setShowFeaturedMotion] = useState(false)
+  const [heroStats, setHeroStats] = useState({ volume: 0, years: 0, signals: 0 })
 
   useEffect(() => {
     const node = featuredSectionRef.current
@@ -36,6 +45,30 @@ export function Home() {
     return () => observer.disconnect()
   }, [])
 
+  useEffect(() => {
+    const animationDurationMs = 900
+    const animationStart = performance.now()
+    let frameId = 0
+
+    const animateStats = (now: number) => {
+      const progress = Math.min((now - animationStart) / animationDurationMs, 1)
+      const easedProgress = 1 - Math.pow(1 - progress, 3)
+
+      setHeroStats({
+        volume: Math.floor(60 * easedProgress),
+        years: Math.floor(6 * easedProgress),
+        signals: Math.floor(5 * easedProgress),
+      })
+
+      if (progress < 1) {
+        frameId = requestAnimationFrame(animateStats)
+      }
+    }
+
+    frameId = requestAnimationFrame(animateStats)
+    return () => cancelAnimationFrame(frameId)
+  }, [])
+
   return (
     <div>
       <section className="relative overflow-hidden border-b border-zinc-800 bg-gradient-to-b from-zinc-900 via-void to-void">
@@ -46,7 +79,7 @@ export function Home() {
               <Badge variant="secondary" className="mb-5">
                 Trusted by active traders worldwide
               </Badge>
-              <h1 className="font-display text-4xl md:text-6xl font-bold leading-tight text-zinc-100">
+              <h1 className="font-display text-3xl md:text-5xl font-bold leading-tight text-zinc-100">
                 Leading Forex Bot <br />
                 Platform for the{" "}
                 <span className="text-orange-500">modern trader</span>
@@ -57,15 +90,15 @@ export function Home() {
 
               <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 px-4 py-3">
-                  <p className="font-display text-2xl font-semibold text-zinc-100">60B+</p>
+                  <p className="font-display text-2xl font-semibold text-zinc-100">{heroStats.volume}B+</p>
                   <p className="text-xs text-zinc-500">Monthly trading volume</p>
                 </div>
                 <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 px-4 py-3">
-                  <p className="font-display text-2xl font-semibold text-zinc-100">6 Years</p>
+                  <p className="font-display text-2xl font-semibold text-zinc-100">{heroStats.years} Years</p>
                   <p className="text-xs text-zinc-500">Strategy research cycle</p>
                 </div>
                 <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 px-4 py-3">
-                  <p className="font-display text-2xl font-semibold text-zinc-100">5M+</p>
+                  <p className="font-display text-2xl font-semibold text-zinc-100">{heroStats.signals}M+</p>
                   <p className="text-xs text-zinc-500">Signal events processed</p>
                 </div>
               </div>
@@ -169,19 +202,24 @@ export function Home() {
         </div>
       </section>
 
-      <section className="container mx-auto px-4 py-16">
-        <div className="p-0">
-          <div ref={featuredSectionRef} className="relative mb-8 flex items-center justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Top performing strategies</p>
+      <section className="w-full py-16">
+        <div className="relative p-0 px-4 md:px-6 smoky-featured-bg">
+          <div className="pointer-events-none absolute inset-0 smoky-featured-layer smoky-featured-layer-a" />
+          <div className="pointer-events-none absolute inset-0 smoky-featured-layer smoky-featured-layer-b" />
+          <div className="pointer-events-none absolute inset-0 smoky-featured-vignette" />
+          <div ref={featuredSectionRef} className="relative mb-8 flex flex-col items-center gap-3 text-center">
+            <div className="w-full">
+              <p className="text-xs font-medium uppercase tracking-[0.22em] text-zinc-300 drop-shadow-[0_2px_10px_rgba(15,23,42,0.6)]">
+                Top performing strategies
+              </p>
               <h2 className="mt-1 font-display text-2xl font-semibold text-zinc-100">Featured bots & products</h2>
             </div>
-            <Button variant="ghost" asChild>
+            <Button variant="ghost" asChild className="md:absolute md:right-0 md:top-1/2 md:-translate-y-1/2">
               <Link to="/shop?featured=1">View all</Link>
             </Button>
           </div>
           {!productsLoaded ? (
-            <div className="relative grid grid-cols-1 justify-items-center gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="relative mx-auto grid max-w-[1240px] grid-cols-1 justify-items-center gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {Array.from({ length: 4 }).map((_, index) => (
                 <div key={index} className="w-full max-w-sm">
                   <ProductCardSkeleton />
@@ -189,11 +227,13 @@ export function Home() {
               ))}
             </div>
           ) : (
-            <div className="relative grid grid-cols-1 justify-items-center gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <div className={`relative mx-auto grid max-w-[1240px] grid-cols-1 justify-items-center gap-6 sm:grid-cols-2 ${featuredGridCols}`}>
               {featured.map((product, index) => (
                 <div
                   key={product.id}
-                  className={`group w-full max-w-sm featured-card-reveal ${
+                  className={`group w-full max-w-sm featured-card-reveal featured-card-glass-shell ${
+                    index === 1 ? "featured-card-hover-demo" : ""
+                  } ${
                     showFeaturedMotion ? "featured-card-reveal-visible" : ""
                   }`}
                   style={{ transitionDelay: `${index * 150}ms` }}
