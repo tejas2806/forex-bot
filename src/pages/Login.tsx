@@ -25,6 +25,23 @@ function getAuthErrorMessage(code: string): string {
   }
 }
 
+function getGoogleAuthErrorMessage(code: string): string {
+  switch (code) {
+    case "auth/popup-closed-by-user":
+      return "Google sign-in popup was closed."
+    case "auth/popup-blocked":
+      return "Popup blocked by browser. Please allow popups and try again."
+    case "auth/unauthorized-domain":
+      return "This domain is not authorized in Firebase Authentication settings."
+    case "auth/operation-not-allowed":
+      return "Google sign-in provider is disabled in Firebase Authentication."
+    case "auth/network-request-failed":
+      return "Network error during Google sign-in. Please try again."
+    default:
+      return "Google sign-in failed. Try again."
+  }
+}
+
 export function Login() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -60,7 +77,11 @@ export function Login() {
     } catch (err: unknown) {
       const code = err && typeof err === "object" && "code" in err ? (err as { code: string }).code : ""
       if (code === "auth/popup-closed-by-user") return
-      setError(code === "auth/account-exists-with-different-credential" ? "An account already exists with this email. Try signing in with email/password." : "Google sign-in failed. Try again.")
+      setError(
+        code === "auth/account-exists-with-different-credential"
+          ? "An account already exists with this email. Try signing in with email/password."
+          : getGoogleAuthErrorMessage(code)
+      )
     } finally {
       setLoading(false)
     }

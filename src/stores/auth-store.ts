@@ -4,6 +4,8 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   GoogleAuthProvider,
   signOut,
   onAuthStateChanged,
@@ -38,6 +40,16 @@ interface AuthStore {
   initAuthListener: () => () => void
 }
 
+function shouldUseRedirectFallback(code: string) {
+  return (
+    code === "auth/popup-blocked" ||
+    code === "auth/popup-closed-by-user" ||
+    code === "auth/network-request-failed" ||
+    code === "auth/web-storage-unsupported" ||
+    code === "auth/cancelled-popup-request"
+  )
+}
+
 export const useAuthStore = create<AuthStore>()(
   persist(
     (set, get) => ({
@@ -45,6 +57,18 @@ export const useAuthStore = create<AuthStore>()(
       authReady: false,
 
       initAuthListener: () => {
+        // Handle users returning from Google redirect flow.
+        void getRedirectResult(auth)
+          .then((result) => {
+            if (!result?.user) return
+            const mapped = mapFirebaseUser(result.user)
+            set({ user: mapped })
+            return syncUserInfo(DEFAULT_ADMIN_EMAIL, mapped)
+          })
+          .catch((err) => {
+            console.warn("getRedirectResult failed", err)
+          })
+
         const unsubscribe = onAuthStateChanged(auth, (fbUser) => {
           const user = fbUser ? mapFirebaseUser(fbUser) : null
           set({ authReady: true, user })
@@ -66,10 +90,16 @@ export const useAuthStore = create<AuthStore>()(
 
       loginWithGoogle: async () => {
         const provider = new GoogleAuthProvider()
-        const { user } = await signInWithPopup(auth, provider)
-        const mapped = mapFirebaseUser(user)
-        set({ user: mapped })
-        await syncUserInfo(DEFAULT_ADMIN_EMAIL, mapped)
+        try {
+          const { user } = await signInWithPopup(auth, provider)
+          const mapped = mapFirebaseUser(user)
+          set({ user: mapped })
+          await syncUserInfo(DEFAULT_ADMIN_EMAIL, mapped)
+        } catch (err: unknown) {
+          const code = err && typeof err === "object" && "code" in err ? (err as { code: string }).code : ""
+          if (!shouldUseRedirectFallback(code)) throw err
+          await signInWithRedirect(auth, provider)
+        }
       },
 
       register: async (email, name, password) => {
