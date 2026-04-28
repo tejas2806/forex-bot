@@ -5,14 +5,19 @@ import {
   DEFAULT_ADMIN_EMAIL,
   getOrders,
   getOrdersForUser,
+  subscribeOrders as firestoreSubscribeOrders,
   addOrder as firestoreAddOrder,
   updateOrderStatus as firestoreUpdateOrderStatus,
 } from "@/lib/firestore"
+
+let ordersRealtimeUnsub: (() => void) | null = null
 
 interface OrdersStore {
   orders: Order[]
   ordersLoaded: boolean
   loadOrders: (adminEmail?: string) => Promise<void>
+  startOrdersRealtime: (adminEmail?: string) => void
+  stopOrdersRealtime: () => void
   /** Load orders from new schema path: admins/{adminId}/users/{userEmail}/orders (for "My orders" page). */
   loadOrdersForUser: (adminEmail?: string, userEmail?: string) => Promise<void>
   addOrder: (order: Omit<Order, "id">) => Promise<Order>
@@ -34,6 +39,22 @@ export const useOrdersStore = create<OrdersStore>()(
         } catch {
           set({ orders: [], ordersLoaded: true })
         }
+      },
+
+      startOrdersRealtime: (adminEmail = DEFAULT_ADMIN_EMAIL) => {
+        if (ordersRealtimeUnsub) return
+        set({ ordersLoaded: false })
+        ordersRealtimeUnsub = firestoreSubscribeOrders(
+          adminEmail,
+          (orders) => set({ orders, ordersLoaded: true }),
+          () => set({ ordersLoaded: true })
+        )
+      },
+
+      stopOrdersRealtime: () => {
+        if (!ordersRealtimeUnsub) return
+        ordersRealtimeUnsub()
+        ordersRealtimeUnsub = null
       },
 
       loadOrdersForUser: async (

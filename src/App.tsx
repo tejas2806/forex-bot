@@ -24,7 +24,8 @@ function App() {
   const authReady = useAuthStore((s) => s.authReady)
   const user = useAuthStore((s) => s.user)
   const loadProducts = useProductsStore((s) => s.loadProducts)
-  const loadOrders = useOrdersStore((s) => s.loadOrders)
+  const startOrdersRealtime = useOrdersStore((s) => s.startOrdersRealtime)
+  const stopOrdersRealtime = useOrdersStore((s) => s.stopOrdersRealtime)
   useEffect(() => {
     const unsubscribe = initAuthListener()
     return () => unsubscribe()
@@ -36,8 +37,9 @@ function App() {
   }, [authReady, user, loadProducts])
   useEffect(() => {
     if (!authReady || !user) return
-    void loadOrders()
-  }, [authReady, user, loadOrders])
+    startOrdersRealtime()
+    return () => stopOrdersRealtime()
+  }, [authReady, user, startOrdersRealtime, stopOrdersRealtime])
 
   return (
     <BrowserRouter>

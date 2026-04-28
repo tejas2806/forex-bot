@@ -14,6 +14,7 @@ import {
   doc,
   getDoc,
   getDocs,
+  onSnapshot,
   setDoc,
   updateDoc,
   deleteDoc,
@@ -25,6 +26,7 @@ import {
   arrayUnion,
   collectionGroup,
   type DocumentData,
+  type Unsubscribe,
 } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import type { Product, User, Order, License } from "@/types"
@@ -490,6 +492,80 @@ export async function getOrders(adminEmail: string): Promise<Order[]> {
     // Fallback below handles missing index or query constraints.
   }
   return getOrdersByAdminUsers(adminEmail)
+}
+
+/**
+ * Real-time orders subscription for admin dashboard.
+ * Watches users and each user's orders subcollection, then emits a merged sorted list.
+ */
+export function subscribeOrders(
+  adminEmail: string,
+  onOrders: (orders: Order[]) => void,
+  onError?: (error: unknown) => void
+): Unsubscribe {
+  const orderMap = new Map<string, Order>()
+  const userOrderUnsubs = new Map<string, Unsubscribe>()
+
+  const emit = () => {
+    const list = Array.from(orderMap.values()).sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    )
+    onOrders(list)
+  }
+
+  const usersUnsub = onSnapshot(
+    getUsersRef(adminEmail),
+    (usersSnap) => {
+      const nextUserIds = new Set(usersSnap.docs.map((d) => d.id))
+
+      for (const [userEmail, unsub] of userOrderUnsubs.entries()) {
+        if (nextUserIds.has(userEmail)) continue
+        unsub()
+        userOrderUnsubs.delete(userEmail)
+        for (const orderId of Array.from(orderMap.keys())) {
+          if (!orderId.startsWith(`${userEmail}::`)) continue
+          orderMap.delete(orderId)
+        }
+      }
+
+      for (const userDoc of usersSnap.docs) {
+        const userEmail = userDoc.id
+        if (userOrderUnsubs.has(userEmail)) continue
+
+        const ordersRef = getUserOrdersRef(adminEmail, userEmail)
+        const orderUnsub = onSnapshot(
+          ordersRef,
+          (ordersSnap) => {
+            for (const key of Array.from(orderMap.keys())) {
+              if (key.startsWith(`${userEmail}::`)) orderMap.delete(key)
+            }
+            for (const orderDoc of ordersSnap.docs) {
+              const data = orderDoc.data() as Record<string, unknown>
+              delete data[ADMIN_ID_FIELD]
+              const order = { id: orderDoc.id, ...data } as Order
+              orderMap.set(`${userEmail}::${orderDoc.id}`, order)
+            }
+            emit()
+          },
+          (error) => {
+            onError?.(error)
+          }
+        )
+
+        userOrderUnsubs.set(userEmail, orderUnsub)
+      }
+    },
+    (error) => {
+      onError?.(error)
+    }
+  )
+
+  return () => {
+    usersUnsub()
+    for (const unsub of userOrderUnsubs.values()) unsub()
+    userOrderUnsubs.clear()
+    orderMap.clear()
+  }
 }
 
 /** Get one order from new schema path (no collection group). Use when you have userEmail. */

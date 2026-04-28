@@ -22,7 +22,6 @@ export function AdminDashboard() {
     .filter((o) => o.status !== "cancelled")
     .reduce((acc, o) => acc + o.total, 0)
 
-  const completedOrders = orders.filter((o) => o.status === "delivered").length
   const pendingOrders = orders.filter((o) => o.status === "pending" || o.status === "paid").length
   const [qrImageUrl, setQrImageUrl] = useState("")
   const [walletAddress, setWalletAddress] = useState("")
@@ -98,14 +97,14 @@ export function AdminDashboard() {
       value: pendingOrders,
       icon: ShoppingBag,
       link: "/admin/orders",
-      helper: `${completedOrders} completed`,
-      tone: pendingOrders > 0 ? "warn" : "neutral",
+      helper: "",
+      tone: "neutral",
     },
     {
       label: "Total revenue",
       value: `${totalRevenue.toFixed(2)} USDT`,
       icon: DollarSign,
-      helper: "Demo data only",
+      helper: "Calculated from Firestore orders",
       tone: "success",
     },
   ]
@@ -122,9 +121,9 @@ export function AdminDashboard() {
         <div className="inline-flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900/60 px-3 py-1 text-xs text-zinc-400">
           <Activity className="h-3.5 w-3.5 text-emerald-400" />
           <span className="hidden sm:inline">
-            Demo environment – numbers update as you test flows
+            Live Firestore data – numbers refresh automatically
           </span>
-          <span className="sm:hidden">Demo stats</span>
+          <span className="sm:hidden">Live stats</span>
         </div>
       </div>
 
