@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom"
 import { Minus, Plus, Trash2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { useCartStore } from "@/stores/cart-store"
+import { cn } from "@/lib/utils"
 import { formatPrice } from "@/lib/utils"
 
 export function Cart() {
@@ -106,12 +107,24 @@ export function Cart() {
             <h3 className="font-display text-lg font-semibold text-zinc-100">Summary</h3>
             <p className="text-zinc-500 mt-1">{totalItems()} item(s)</p>
             <p className="mt-4 text-2xl font-bold text-zinc-100">{formatPrice(totalPrice())}</p>
-            <Button asChild className="w-full mt-6" size="lg">
-              <Link to="/checkout">Proceed to checkout</Link>
-            </Button>
-            <Button variant="outline" asChild className="w-full mt-2">
-              <Link to="/shop">Continue browsing</Link>
-            </Button>
+            <Link
+              to="/checkout"
+              className={cn(
+                buttonVariants({ size: "lg" }),
+                "mt-6 w-full bg-orange-500 text-white shadow-[0_10px_24px_rgba(249,115,22,0.3)] transition-all hover:-translate-y-0.5 hover:bg-orange-600"
+              )}
+            >
+              Proceed to checkout
+            </Link>
+            <Link
+              to="/shop"
+              className={cn(
+                buttonVariants({ variant: "outline" }),
+                "mt-2 w-full border-zinc-600 bg-zinc-900 text-zinc-100 shadow-[0_6px_18px_rgba(0,0,0,0.25)] hover:border-orange-500/70 hover:bg-zinc-800"
+              )}
+            >
+              Continue browsing
+            </Link>
           </div>
         </div>
       </div>
