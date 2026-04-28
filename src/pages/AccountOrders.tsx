@@ -66,7 +66,7 @@ export function AccountOrders() {
             <Button asChild variant="outline" className="border-emerald-400/40 text-emerald-200 hover:bg-emerald-500/15">
               <a href={forexBotExeUrl} download className="inline-flex items-center justify-center gap-2">
                 <Download className="h-4 w-4 shrink-0" />
-                Download ForexBotsApp.exe
+                Download BotsApp.exe
               </a>
             </Button>
           </CardContent>

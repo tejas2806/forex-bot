@@ -1,4 +1,4 @@
-const DEFAULT_FOREX_BOT_DOWNLOAD_URL = "/bot-app/ForexBotsApp.exe"
+const DEFAULT_FOREX_BOT_DOWNLOAD_URL = "/bot-app/BotsApp.exe"
 
 export function getForexBotDownloadUrl() {
   const configured = import.meta.env.VITE_FOREX_BOT_DOWNLOAD_URL

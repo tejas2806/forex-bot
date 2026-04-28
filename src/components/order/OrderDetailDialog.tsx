@@ -251,7 +251,7 @@ export function OrderDetailDialog({
                 <Button asChild variant="outline">
                   <a href={forexBotExeUrl} download className="inline-flex items-center justify-center gap-2">
                     <Download className="h-4 w-4 shrink-0" />
-                    Download ForexBotsApp.exe
+                    Download BotsApp.exe
                   </a>
                 </Button>
               </div>

@@ -197,7 +197,7 @@ export function Checkout() {
               <Button asChild className="bg-orange-500 text-white hover:bg-orange-600">
                 <a href={forexBotExeUrl} download className="inline-flex items-center justify-center gap-2">
                   <Download className="h-4 w-4 shrink-0" />
-                  Download ForexBotsApp.exe
+                  Download BotsApp.exe
                 </a>
               </Button>
               <Button asChild variant="outline" className="border-zinc-700 hover:bg-zinc-800">
