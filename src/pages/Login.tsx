@@ -29,6 +29,8 @@ function getGoogleAuthErrorMessage(code: string): string {
   switch (code) {
     case "auth/popup-closed-by-user":
       return "Google sign-in popup was closed."
+    case "auth/cancelled-popup-request":
+      return "Google sign-in was cancelled."
     case "auth/popup-blocked":
       return "Popup blocked by browser. Please allow popups and try again."
     case "auth/unauthorized-domain":
@@ -46,7 +48,8 @@ export function Login() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
-  const [loading, setLoading] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
   const [touched, setTouched] = useState<{ email: boolean; password: boolean }>({
     email: false,
     password: false,
@@ -89,7 +92,7 @@ export function Login() {
       setError("Please fix the highlighted fields.")
       return
     }
-    setLoading(true)
+    setSubmitting(true)
     try {
       await login(email, password)
       navigate(redirect)
@@ -97,26 +100,26 @@ export function Login() {
       const code = err && typeof err === "object" && "code" in err ? (err as { code: string }).code : ""
       setError(getAuthErrorMessage(code))
     } finally {
-      setLoading(false)
+      setSubmitting(false)
     }
   }
 
   const handleGoogle = async () => {
     setError("")
-    setLoading(true)
+    setGoogleLoading(true)
     try {
       await loginWithGoogle()
       navigate(redirect)
     } catch (err: unknown) {
       const code = err && typeof err === "object" && "code" in err ? (err as { code: string }).code : ""
-      if (code === "auth/popup-closed-by-user") return
+      if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") return
       setError(
         code === "auth/account-exists-with-different-credential"
           ? "An account already exists with this email. Try signing in with email/password."
           : getGoogleAuthErrorMessage(code)
       )
     } finally {
-      setLoading(false)
+      setGoogleLoading(false)
     }
   }
 
@@ -197,7 +200,7 @@ export function Login() {
                   className={`mt-2 h-11 rounded-xl bg-zinc-950/70 ${
                     touched.email && fieldErrors.email ? "border-red-500/60" : "border-zinc-800"
                   }`}
-                  disabled={loading}
+                  disabled={submitting}
                 />
                 {touched.email && fieldErrors.email && (
                   <p className="mt-1 text-xs text-red-400">{fieldErrors.email}</p>
@@ -225,7 +228,7 @@ export function Login() {
                   className={`mt-2 h-11 rounded-xl bg-zinc-950/70 ${
                     touched.password && fieldErrors.password ? "border-red-500/60" : "border-zinc-800"
                   }`}
-                  disabled={loading}
+                  disabled={submitting}
                 />
                 {touched.password && fieldErrors.password && (
                   <p className="mt-1 text-xs text-red-400">{fieldErrors.password}</p>
@@ -240,9 +243,9 @@ export function Login() {
               <Button
                 type="submit"
                 className="h-11 w-full rounded-xl bg-orange-500 text-white hover:bg-orange-600"
-                disabled={loading}
+                disabled={submitting}
               >
-                {loading ? "Signing in..." : "Continue"}
+                {submitting ? "Signing in..." : "Continue"}
               </Button>
               <div className="relative py-1">
                 <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-zinc-800" />
@@ -256,11 +259,11 @@ export function Login() {
                   variant="outline"
                   className="h-11 w-full rounded-xl border-zinc-700 bg-zinc-900/70 text-zinc-100 hover:bg-zinc-800"
                   onClick={handleGoogle}
-                  disabled={loading}
+                  disabled={googleLoading}
                 >
                   <span className="inline-flex items-center justify-center gap-2">
                     <GoogleIcon className="h-5 w-5" />
-                    Continue with Google
+                    {googleLoading ? "Opening Google..." : "Continue with Google"}
                   </span>
                 </Button>
               </div>

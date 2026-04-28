@@ -27,6 +27,8 @@ function getGoogleAuthErrorMessage(code: string): string {
   switch (code) {
     case "auth/popup-closed-by-user":
       return "Google sign-up popup was closed."
+    case "auth/cancelled-popup-request":
+      return "Google sign-up was cancelled."
     case "auth/popup-blocked":
       return "Popup blocked by browser. Please allow popups and try again."
     case "auth/unauthorized-domain":
@@ -45,7 +47,8 @@ export function Register() {
   const [name, setName] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
-  const [loading, setLoading] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
   const [touched, setTouched] = useState<{ name: boolean; email: boolean; password: boolean }>({
     name: false,
     email: false,
@@ -94,7 +97,7 @@ export function Register() {
       setError("Please fix the highlighted fields.")
       return
     }
-    setLoading(true)
+    setSubmitting(true)
     try {
       await register(email, name, password)
       navigate("/")
@@ -102,26 +105,26 @@ export function Register() {
       const code = err && typeof err === "object" && "code" in err ? (err as { code: string }).code : ""
       setError(getAuthErrorMessage(code))
     } finally {
-      setLoading(false)
+      setSubmitting(false)
     }
   }
 
   const handleGoogle = async () => {
     setError("")
-    setLoading(true)
+    setGoogleLoading(true)
     try {
       await loginWithGoogle()
       navigate("/")
     } catch (err: unknown) {
       const code = err && typeof err === "object" && "code" in err ? (err as { code: string }).code : ""
-      if (code === "auth/popup-closed-by-user") return
+      if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") return
       setError(
         code === "auth/account-exists-with-different-credential"
           ? "An account already exists with this email. Try logging in instead."
           : getGoogleAuthErrorMessage(code)
       )
     } finally {
-      setLoading(false)
+      setGoogleLoading(false)
     }
   }
 
@@ -201,7 +204,7 @@ export function Register() {
                   className={`mt-2 h-11 rounded-xl bg-zinc-950/70 ${
                     touched.name && fieldErrors.name ? "border-red-500/60" : "border-zinc-800"
                   }`}
-                  disabled={loading}
+                  disabled={submitting}
                 />
                 {touched.name && fieldErrors.name && (
                   <p className="mt-1 text-xs text-red-400">{fieldErrors.name}</p>
@@ -230,7 +233,7 @@ export function Register() {
                   className={`mt-2 h-11 rounded-xl bg-zinc-950/70 ${
                     touched.email && fieldErrors.email ? "border-red-500/60" : "border-zinc-800"
                   }`}
-                  disabled={loading}
+                  disabled={submitting}
                 />
                 {touched.email && fieldErrors.email && (
                   <p className="mt-1 text-xs text-red-400">{fieldErrors.email}</p>
@@ -258,7 +261,7 @@ export function Register() {
                   className={`mt-2 h-11 rounded-xl bg-zinc-950/70 ${
                     touched.password && fieldErrors.password ? "border-red-500/60" : "border-zinc-800"
                   }`}
-                  disabled={loading}
+                  disabled={submitting}
                   placeholder="At least 6 characters"
                 />
                 {touched.password && fieldErrors.password && (
@@ -274,9 +277,9 @@ export function Register() {
               <Button
                 type="submit"
                 className="h-11 w-full rounded-xl bg-orange-500 text-white hover:bg-orange-600"
-                disabled={loading}
+                disabled={submitting}
               >
-                {loading ? "Creating account..." : "Continue"}
+                {submitting ? "Creating account..." : "Continue"}
               </Button>
               <div className="relative py-1">
                 <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-zinc-800" />
@@ -290,11 +293,11 @@ export function Register() {
                   variant="outline"
                   className="h-11 w-full rounded-xl border-zinc-700 bg-zinc-900/70 text-zinc-100 hover:bg-zinc-800"
                   onClick={handleGoogle}
-                  disabled={loading}
+                  disabled={googleLoading}
                 >
                   <span className="inline-flex items-center justify-center gap-2">
                     <GoogleIcon className="h-5 w-5" />
-                    Continue with Google
+                    {googleLoading ? "Opening Google..." : "Continue with Google"}
                   </span>
                 </Button>
               </div>

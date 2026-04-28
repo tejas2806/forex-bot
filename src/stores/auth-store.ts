@@ -43,10 +43,8 @@ interface AuthStore {
 function shouldUseRedirectFallback(code: string) {
   return (
     code === "auth/popup-blocked" ||
-    code === "auth/popup-closed-by-user" ||
     code === "auth/network-request-failed" ||
-    code === "auth/web-storage-unsupported" ||
-    code === "auth/cancelled-popup-request"
+    code === "auth/web-storage-unsupported"
   )
 }
 
