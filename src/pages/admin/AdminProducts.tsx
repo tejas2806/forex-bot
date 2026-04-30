@@ -290,8 +290,19 @@ export function AdminProducts() {
             </div>
           </div>
           <DialogFooter className="sticky bottom-0 bg-zinc-900 pt-3">
-            <Button variant="outline" onClick={() => setEditing(null)}>Cancel</Button>
-            <Button onClick={saveEdit}>Save</Button>
+            <Button
+              variant="outline"
+              className="h-10 min-w-[120px] border-zinc-700 bg-zinc-900/80 text-zinc-100 hover:bg-zinc-800"
+              onClick={() => setEditing(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="h-10 min-w-[140px] bg-orange-500 text-white shadow-[0_10px_24px_rgba(249,115,22,0.3)] hover:bg-orange-600"
+              onClick={saveEdit}
+            >
+              Save
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -407,8 +418,19 @@ export function AdminProducts() {
             </div>
           </div>
           <DialogFooter className="sticky bottom-0 bg-zinc-900 pt-3">
-            <Button variant="outline" onClick={() => setAdding(false)}>Cancel</Button>
-            <Button onClick={saveAdd}>Add product</Button>
+            <Button
+              variant="outline"
+              className="h-10 min-w-[120px] border-zinc-700 bg-zinc-900/80 text-zinc-100 hover:bg-zinc-800"
+              onClick={() => setAdding(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="h-10 min-w-[140px] bg-orange-500 text-white shadow-[0_10px_24px_rgba(249,115,22,0.3)] hover:bg-orange-600"
+              onClick={saveAdd}
+            >
+              Add product
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
