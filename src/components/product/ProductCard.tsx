@@ -107,7 +107,7 @@ export function ProductCard({ product }: ProductCardProps) {
       </Card>
       {loginAlert && (
         <div
-          className={`pointer-events-none absolute left-0 right-0 top-full z-20 mt-2 rounded-lg border border-amber-500/35 bg-amber-500/10 px-2.5 py-2 text-xs text-amber-200 shadow-[0_8px_24px_rgba(0,0,0,0.35)] transition-all duration-500 ${
+          className={`pointer-events-none absolute left-0 right-0 top-full z-30 mt-2 rounded-lg bg-amber-500/12 px-2.5 py-2 text-xs text-amber-200 shadow-[0_8px_24px_rgba(0,0,0,0.35)] backdrop-blur-sm transition-all duration-500 ${
             showLoginAlert ? "translate-y-0 opacity-100" : "-translate-y-1 opacity-0"
           }`}
         >

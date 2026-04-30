@@ -203,7 +203,7 @@ export function Home() {
       </section>
 
       <section className="w-full py-16">
-        <div className="relative overflow-hidden p-0 px-4 md:px-6 smoky-featured-bg">
+        <div className="relative overflow-x-hidden p-0 px-4 md:px-6 smoky-featured-bg">
           <div className="pointer-events-none absolute inset-0 smoky-featured-layer smoky-featured-layer-a" />
           <div className="pointer-events-none absolute inset-0 smoky-featured-layer smoky-featured-layer-b" />
           <div className="pointer-events-none absolute inset-0 smoky-featured-vignette" />
