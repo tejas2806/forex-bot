@@ -145,7 +145,10 @@ export function AdminProducts() {
     <div>
       <div className="flex items-center justify-between mb-8">
         <h1 className="font-display text-3xl font-bold text-zinc-100">Products</h1>
-        <Button onClick={openAdd}>
+        <Button
+          onClick={openAdd}
+          className="bg-orange-500 text-white shadow-[0_10px_24px_rgba(249,115,22,0.3)] hover:bg-orange-600"
+        >
           <Plus className="h-4 w-4 mr-2" />
           Add product
         </Button>
@@ -189,7 +192,7 @@ export function AdminProducts() {
       </div>
 
       <Dialog open={!!editing} onOpenChange={(open) => !open && setEditing(null)}>
-        <DialogContent>
+        <DialogContent className="max-h-[88vh] overflow-y-auto pr-2">
           <DialogHeader>
             <DialogTitle>Edit product</DialogTitle>
           </DialogHeader>
@@ -286,7 +289,7 @@ export function AdminProducts() {
               </label>
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="sticky bottom-0 bg-zinc-900 pt-3">
             <Button variant="outline" onClick={() => setEditing(null)}>Cancel</Button>
             <Button onClick={saveEdit}>Save</Button>
           </DialogFooter>
@@ -294,7 +297,7 @@ export function AdminProducts() {
       </Dialog>
 
       <Dialog open={adding} onOpenChange={setAdding}>
-        <DialogContent>
+        <DialogContent className="max-h-[88vh] overflow-y-auto pr-2">
           <DialogHeader>
             <DialogTitle>Add product</DialogTitle>
           </DialogHeader>
@@ -403,7 +406,7 @@ export function AdminProducts() {
               </label>
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="sticky bottom-0 bg-zinc-900 pt-3">
             <Button variant="outline" onClick={() => setAdding(false)}>Cancel</Button>
             <Button onClick={saveAdd}>Add product</Button>
           </DialogFooter>
