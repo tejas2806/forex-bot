@@ -131,7 +131,7 @@ export function Register() {
   return (
     <div className="relative overflow-hidden bg-void">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_22%_28%,rgba(124,58,237,0.15),transparent_40%),radial-gradient(circle_at_78%_34%,rgba(249,115,22,0.12),transparent_42%)]" />
-      <div className="container relative mx-auto grid min-h-[calc(100vh-4rem)] items-center gap-6 px-4 py-12 lg:pr-28 lg:grid-cols-[minmax(0,1fr)_460px] lg:gap-10">
+      <div className="relative mx-auto grid w-full max-w-[1264px] min-h-[calc(100vh-4rem)] items-center gap-6 px-4 py-12 lg:grid-cols-[minmax(0,1fr)_460px] lg:gap-10">
         <div className="max-w-xl">
           <Link
             to="/"

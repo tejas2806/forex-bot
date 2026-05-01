@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom"
-import { ShoppingCart, LogOut, LayoutDashboard, Search, Menu } from "lucide-react"
+import { ShoppingCart, LogOut, LayoutDashboard, Search, Menu, ShoppingBag, Moon, Sun } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -12,7 +12,7 @@ import { useCartStore } from "@/stores/cart-store"
 import { useAuthStore } from "@/stores/auth-store"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
   Sheet,
   SheetContent,
@@ -28,6 +28,24 @@ export function Header() {
   const { user, logout } = useAuthStore()
   const navigate = useNavigate()
   const [search, setSearch] = useState("")
+  const [theme, setTheme] = useState<"dark" | "light">("dark")
+
+  useEffect(() => {
+    const saved = window.localStorage.getItem("alphaforge-theme")
+    const preferred =
+      saved === "light" || saved === "dark"
+        ? (saved as "light" | "dark")
+        : window.matchMedia("(prefers-color-scheme: light)").matches
+          ? "light"
+          : "dark"
+    setTheme(preferred)
+  }, [])
+
+  useEffect(() => {
+    const root = document.documentElement
+    root.classList.toggle("light", theme === "light")
+    window.localStorage.setItem("alphaforge-theme", theme)
+  }, [theme])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -36,7 +54,7 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-zinc-800 bg-void/95 backdrop-blur supports-[backdrop-filter]:bg-void/80">
-      <div className="container mx-auto flex h-16 items-center gap-6 px-4">
+      <div className="mx-auto flex h-16 w-full max-w-[1264px] items-center gap-6 px-4">
         <Link to="/" className="font-display text-xl font-bold text-zinc-100">
           AlphaForge
         </Link>
@@ -54,6 +72,9 @@ export function Header() {
               <SheetDescription>Navigate products and account pages.</SheetDescription>
             </SheetHeader>
             <nav className="mt-6 flex flex-col gap-2">
+              <Button variant="ghost" className="justify-start" asChild>
+                <Link to="/#about">About us</Link>
+              </Button>
               <Button variant="ghost" className="justify-start" asChild>
                 <Link to="/shop">Products</Link>
               </Button>
@@ -88,21 +109,27 @@ export function Header() {
 
         <nav className="hidden md:flex items-center gap-6">
           <Link
+            to="/#about"
+            className="text-[0.95rem] font-medium text-zinc-400 hover:text-zinc-100 transition-colors"
+          >
+            About us
+          </Link>
+          <Link
             to="/shop"
-            className="text-sm font-medium text-zinc-400 hover:text-zinc-100 transition-colors"
+            className="text-[0.95rem] font-medium text-zinc-400 hover:text-zinc-100 transition-colors"
           >
             Products
           </Link>
           <Link
             to="/shop?featured=1"
-            className="text-sm font-medium text-zinc-400 hover:text-zinc-100 transition-colors"
+            className="text-[0.95rem] font-medium text-zinc-400 hover:text-zinc-100 transition-colors"
           >
             Featured
           </Link>
           {user && (
             <Link
               to="/account/orders"
-              className="text-sm font-medium text-zinc-400 hover:text-zinc-100 transition-colors"
+              className="text-[0.95rem] font-medium text-zinc-400 hover:text-zinc-100 transition-colors"
             >
               Orders
             </Link>
@@ -110,7 +137,7 @@ export function Header() {
           {user?.role === "admin" && (
             <Link
               to="/admin"
-              className="text-sm font-medium text-orange-500 hover:text-orange-400 transition-colors"
+              className="text-[0.95rem] font-medium text-orange-500 hover:text-orange-400 transition-colors"
             >
               Admin
             </Link>
@@ -133,13 +160,22 @@ export function Header() {
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon" asChild>
             <Link to="/cart" className="relative">
-              <ShoppingCart className="h-5 w-5" />
+              <ShoppingCart className="h-5.5 w-5.5" />
               {totalItems > 0 && (
                 <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold text-white">
                   {totalItems}
                 </span>
               )}
             </Link>
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setTheme((prev) => (prev === "dark" ? "light" : "dark"))}
+            aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            title={theme === "dark" ? "Light mode" : "Dark mode"}
+          >
+            {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </Button>
 
           {user ? (
@@ -160,7 +196,10 @@ export function Header() {
                 </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link to="/account/orders">Orders</Link>
+                  <Link to="/account/orders">
+                    <ShoppingBag className="mr-2 h-4 w-4" />
+                    Orders
+                  </Link>
                 </DropdownMenuItem>
                 {user?.role === "admin" && (
                   <DropdownMenuItem asChild>

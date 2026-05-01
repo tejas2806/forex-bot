@@ -1,10 +1,11 @@
 import { Outlet, Link, Navigate } from "react-router-dom"
-import { LayoutDashboard, Package, ShoppingBag, Users, ArrowLeft } from "lucide-react"
+import { LayoutDashboard, Package, ShoppingBag, Users, ArrowLeft, ChartSpline } from "lucide-react"
 import { useAuthStore } from "@/stores/auth-store"
 import { Button } from "@/components/ui/button"
 
 const nav = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/admin/analytics", label: "Analytics", icon: ChartSpline },
   { to: "/admin/products", label: "Products", icon: Package },
   { to: "/admin/orders", label: "Orders", icon: ShoppingBag },
   { to: "/admin/users", label: "Users", icon: Users },
@@ -19,7 +20,7 @@ export function AdminLayout() {
 
   return (
     <div className="min-h-screen bg-void">
-      <aside className="fixed left-0 top-0 z-30 h-full w-56 border-r border-zinc-800 bg-ink">
+      <aside className="fixed inset-y-0 left-0 z-30 w-56 overflow-y-auto border-r border-zinc-800 bg-ink">
         <div className="p-4">
           <Link to="/" className="font-display text-lg font-bold text-zinc-100">
             AlphaForge Admin
@@ -46,7 +47,7 @@ export function AdminLayout() {
           </Button>
         </div>
       </aside>
-      <main className="pl-56 p-8">
+      <main className="ml-56 min-h-screen p-8">
         <Outlet />
       </main>
     </div>

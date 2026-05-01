@@ -3,8 +3,8 @@ import { Link } from "react-router-dom"
 export function Footer() {
   return (
     <footer className="border-t border-zinc-800 bg-ink mt-auto">
-      <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+      <div className="mx-auto w-full max-w-[1240px] px-4 py-12 md:px-6">
+        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-4">
           <div>
             <h3 className="font-display font-semibold text-zinc-100 mb-4">AlphaForge</h3>
             <p className="text-sm text-zinc-500 max-w-[200px]">
@@ -52,7 +52,7 @@ export function Footer() {
             </ul>
           </div>
         </div>
-        <div className="mt-10 pt-8 border-t border-zinc-800 text-center text-sm text-zinc-500">
+        <div className="mt-10 border-t border-zinc-800 pt-8 text-center text-sm text-zinc-500">
           © {new Date().getFullYear()} AlphaForge. Forex trading involves risk. Past performance is not indicative of future results.
         </div>
       </div>

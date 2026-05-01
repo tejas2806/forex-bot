@@ -34,6 +34,7 @@ export function AdminOrders() {
   const [licenses, setLicenses] = useState<License[]>([])
   const [statusFilter, setStatusFilter] = useState<"all" | Order["status"]>("all")
   const [search, setSearch] = useState("")
+  const [dateFilter, setDateFilter] = useState("")
   const [sortBy, setSortBy] = useState<"latest" | "oldest" | "amount_desc" | "amount_asc">("latest")
 
   const statusOptions: Order["status"][] = ["pending", "paid", "cancelled"]
@@ -51,6 +52,10 @@ export function AdminOrders() {
   const filteredAndSortedOrders = orders
     .filter((order) => {
       if (statusFilter !== "all" && order.status !== statusFilter) return false
+      if (dateFilter) {
+        const createdDay = new Date(order.createdAt).toISOString().slice(0, 10)
+        if (createdDay !== dateFilter) return false
+      }
       if (!search.trim()) return true
       const query = search.trim().toLowerCase()
       const productNames = order.items.map((i) => i.product.name.toLowerCase()).join(" ")
@@ -93,6 +98,14 @@ export function AdminOrders() {
 
   useEffect(() => {
     const orderId = searchParams.get("orderId")
+    const status = searchParams.get("status")
+    const q = searchParams.get("q")
+    const date = searchParams.get("date")
+    if (status && ["pending", "paid", "cancelled", "all"].includes(status)) {
+      setStatusFilter(status as "all" | Order["status"])
+    }
+    if (q) setSearch(q)
+    if (date) setDateFilter(date)
     if (!orderId) return
     const target = orders.find((order) => order.id === orderId)
     if (!target) return
@@ -138,6 +151,18 @@ export function AdminOrders() {
                 <SelectItem value="amount_asc">Lowest amount</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          <div className="grid gap-3 md:grid-cols-[220px_auto]">
+            <Input
+              type="date"
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+            />
+            {dateFilter && (
+              <Button variant="outline" size="sm" className="w-fit" onClick={() => setDateFilter("")}>
+                Clear date filter
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>

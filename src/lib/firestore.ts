@@ -835,6 +835,41 @@ export async function getLicensesByOrder(adminEmail: string, orderId: string): P
   )
 }
 
+/** Get all licenses for admin (new schema + legacy fallback). */
+export async function getLicenses(adminEmail: string): Promise<License[]> {
+  const adminId = toAdminId(adminEmail)
+  const byId = new Map<string, License>()
+
+  try {
+    const ref = collectionGroup(db, LICENSES_SUBCOLLECTION)
+    const q = query(ref, where(ADMIN_ID_FIELD, "==", adminId), orderBy("createdAt", "desc"))
+    const snap = await getDocs(q)
+    snap.docs.forEach((d) => {
+      const data = d.data() as Record<string, unknown>
+      delete data[ADMIN_ID_FIELD]
+      byId.set(d.id, { id: d.id, ...data } as License)
+    })
+  } catch {
+    // Index may be missing
+  }
+
+  try {
+    const legacyRef = getLicensesRefLegacy(adminEmail)
+    const legacyQ = query(legacyRef, orderBy("createdAt", "desc"))
+    const legacySnap = await getDocs(legacyQ)
+    legacySnap.docs.forEach((d) => {
+      if (byId.has(d.id)) return
+      byId.set(d.id, { id: d.id, ...d.data() } as License)
+    })
+  } catch {
+    // Ignore
+  }
+
+  return Array.from(byId.values()).sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  )
+}
+
 /** Validate license key (for Python/GUI app). Returns license if active and not expired. */
 export async function validateLicenseKey(
   adminEmail: string,
