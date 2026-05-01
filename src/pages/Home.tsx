@@ -1,6 +1,19 @@
 import { Link, useLocation } from "react-router-dom"
 import { useEffect, useRef, useState } from "react"
-import { ArrowRight, Bot, ChevronDown, ShieldCheck, Star, TrendingUp } from "lucide-react"
+import {
+  ArrowRight,
+  Bot,
+  DollarSign,
+  LineChart,
+  Mail,
+  Minus,
+  PhoneCall,
+  Plus,
+  ShieldCheck,
+  Star,
+  MessageCircleMore,
+  TrendingUp,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -12,10 +25,12 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel"
-import Globe3DDemo from "@/components/3d-globe-demo"
+import { TypingAnimation } from "@/components/ui/typing-animation"
+import { OrbitingCircles } from "@/components/ui/orbiting-circles"
+import Globe3DDemoSecond from "@/components/3d-globe-demo-2"
+import { AnimatedBeamDemo } from "@/components/animated-beam-demo"
 import { ProductCard } from "@/components/product/ProductCard"
 import { ProductCardSkeleton } from "@/components/product/ProductCardSkeleton"
-import { HeroCandlestickAnimation } from "@/components/analytics/HeroCandlestickAnimation"
 import { useProductsStore } from "@/stores/products-store"
 import goldCoin from "@/assets/dollar-gold-coin.png"
 
@@ -146,7 +161,7 @@ export function Home() {
               <h1 className="font-display text-3xl md:text-5xl font-bold leading-tight text-zinc-100">
                 Leading Forex Bot <br />
                 Platform for the{" "}
-                <span className="text-orange-500">modern trader</span>
+                <TypingAnimation className="text-orange-500">modern trader</TypingAnimation>
               </h1>
               <p className="mt-5 text-lg text-zinc-400">
                 Professional trading bots, indicators, and real-time signal workflows built to scale consistency and reduce emotion in execution.
@@ -185,15 +200,39 @@ export function Home() {
                 Sign Up and Claim up to 10,000 USDT in Rewards
               </p>
               <div className="mt-6 rounded-2xl border border-zinc-800/70 bg-zinc-900/35 p-4 lg:hidden">
-                <div className="flex justify-center">
-                  <div className="hero-coin-drop">
-                    <div className="hero-coin-flip">
-                      <img
-                        src={goldCoin}
-                        alt="Gold coin showing trading value"
-                        className="h-44 w-44 object-contain drop-shadow-[0_20px_28px_rgba(249,115,22,0.4)]"
-                      />
+                <div className="relative mx-auto flex h-[340px] w-full max-w-[340px] items-center justify-center">
+                  <OrbitingCircles iconSize={44} radius={136} speed={1.1} duration={22}>
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full border border-orange-500/45 bg-zinc-900/85 text-orange-400">
+                      <Bot className="h-5 w-5" />
                     </div>
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full border border-cyan-400/45 bg-zinc-900/85 text-cyan-300">
+                      <TrendingUp className="h-5 w-5" />
+                    </div>
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full border border-emerald-400/45 bg-zinc-900/85 text-emerald-300">
+                      <LineChart className="h-5 w-5" />
+                    </div>
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full border border-violet-400/45 bg-zinc-900/85 text-violet-300">
+                      <ShieldCheck className="h-5 w-5" />
+                    </div>
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full border border-amber-400/45 bg-zinc-900/85 text-amber-300">
+                      <DollarSign className="h-5 w-5" />
+                    </div>
+                  </OrbitingCircles>
+
+                  <OrbitingCircles iconSize={34} radius={94} speed={1.2} duration={16} reverse path>
+                    <span className="h-3.5 w-3.5 rounded-full bg-orange-500/80" />
+                    <span className="h-3.5 w-3.5 rounded-full bg-cyan-400/80" />
+                    <span className="h-3.5 w-3.5 rounded-full bg-emerald-400/80" />
+                    <span className="h-3.5 w-3.5 rounded-full bg-violet-400/80" />
+                  </OrbitingCircles>
+
+                  <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+                    <div className="pointer-events-none absolute inset-[-18px] rounded-full border border-white/15" />
+                    <img
+                      src={goldCoin}
+                      alt="AlphaForge trading coin"
+                      className="h-48 w-48 object-contain drop-shadow-[0_18px_28px_rgba(249,115,22,0.34)]"
+                    />
                   </div>
                 </div>
               </div>
@@ -201,30 +240,73 @@ export function Home() {
 
             <div className="relative hidden lg:block">
               <div className="absolute -inset-3 rounded-3xl bg-orange-500/15 blur-3xl" />
-              <div className="relative mx-auto w-full max-w-[560px] space-y-4">
-                <div className="rounded-2xl bg-transparent p-4">
-                  <div className="flex justify-center">
-                    <div className="hero-coin-drop">
-                      <div className="hero-coin-flip">
-                        <img
-                          src={goldCoin}
-                          alt="Gold coin showing trading value"
-                          className="h-44 w-44 object-contain drop-shadow-[0_20px_24px_rgba(249,115,22,0.34)]"
-                        />
+              <div className="relative mx-auto flex h-[620px] w-full max-w-[760px] items-center justify-center">
+                {/* Previous hero block kept for reference only.
+                <div className="relative mx-auto w-full max-w-[560px] space-y-4">
+                  <div className="rounded-2xl bg-transparent p-4">
+                    <div className="flex justify-center">
+                      <div className="hero-coin-drop">
+                        <div className="hero-coin-flip">
+                          <img
+                            src={goldCoin}
+                            alt="Gold coin showing trading value"
+                            className="h-44 w-44 object-contain drop-shadow-[0_20px_24px_rgba(249,115,22,0.34)]"
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
+                  <div className="rounded-2xl bg-transparent p-4">
+                    <HeroCandlestickAnimation />
+                  </div>
                 </div>
-                <div className="rounded-2xl bg-transparent p-4">
-                  <HeroCandlestickAnimation />
+                */}
+
+                <div className="orbit-hero-visual relative h-[560px] w-[560px]">
+                  <OrbitingCircles iconSize={58} radius={220} speed={1.1} duration={22}>
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full border border-orange-500/45 bg-zinc-900/85 text-orange-400">
+                      <Bot className="h-6 w-6" />
+                    </div>
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full border border-cyan-400/45 bg-zinc-900/85 text-cyan-300">
+                      <TrendingUp className="h-6 w-6" />
+                    </div>
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full border border-emerald-400/45 bg-zinc-900/85 text-emerald-300">
+                      <LineChart className="h-6 w-6" />
+                    </div>
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full border border-violet-400/45 bg-zinc-900/85 text-violet-300">
+                      <ShieldCheck className="h-6 w-6" />
+                    </div>
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full border border-amber-400/45 bg-zinc-900/85 text-amber-300">
+                      <DollarSign className="h-6 w-6" />
+                    </div>
+                  </OrbitingCircles>
+
+                  <OrbitingCircles
+                    iconSize={46}
+                    radius={152}
+                    speed={1.2}
+                    duration={16}
+                    reverse
+                    path
+                  >
+                    <span className="h-4 w-4 rounded-full bg-orange-500/80" />
+                    <span className="h-4 w-4 rounded-full bg-cyan-400/80" />
+                    <span className="h-4 w-4 rounded-full bg-emerald-400/80" />
+                    <span className="h-4 w-4 rounded-full bg-violet-400/80" />
+                  </OrbitingCircles>
+
+                  <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+                    <div className="pointer-events-none absolute inset-[-30px] rounded-full border border-white/15" />
+                    <img
+                      src={goldCoin}
+                      alt="AlphaForge trading coin"
+                      className="h-72 w-72 object-contain drop-shadow-[0_24px_36px_rgba(249,115,22,0.34)]"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-          <div className="mt-10 space-y-4 lg:hidden">
-            <HeroCandlestickAnimation />
-          </div>
-
           <div className="mx-auto mt-14 grid max-w-[1240px] gap-4 md:grid-cols-3">
             <Card className="group relative h-full overflow-hidden bg-zinc-900/40 transition-all duration-300 hover:-translate-y-1 hover:border-orange-500/50 hover:shadow-[0_14px_40px_rgba(249,115,22,0.18)]">
               <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 bg-gradient-to-br from-orange-500/12 via-transparent to-transparent" />
@@ -262,27 +344,6 @@ export function Home() {
                 </CardDescription>
               </CardHeader>
             </Card>
-          </div>
-        </div>
-      </section>
-
-      <section className="px-4 py-14 md:py-16">
-        <div className="mx-auto grid w-full max-w-[1240px] gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:items-center">
-          <Card className="border-zinc-800 bg-zinc-900/65">
-            <CardHeader>
-              <CardTitle className="text-2xl text-zinc-100 md:text-3xl">Global trader activity</CardTitle>
-              <CardDescription className="text-zinc-400">
-                Explore how trading communities are connected across major markets. This demo block is ready for live geographic insight modules.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm text-zinc-300">
-              <p>Live strategy reach across global trading cities</p>
-              <p>Instant marker interactions prepared for future data hooks</p>
-              <p>Designed to match the AlphaForge visual system</p>
-            </CardContent>
-          </Card>
-          <div className="rounded-2xl border border-zinc-800/70 bg-zinc-900/40 p-3">
-            <Globe3DDemo />
           </div>
         </div>
       </section>
@@ -346,6 +407,54 @@ export function Home() {
               </Carousel>
             </div>
           )}
+        </div>
+      </section>
+
+      <section className="px-4 py-14 md:py-16">
+        <div className="mx-auto grid w-full max-w-[1240px] gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-stretch">
+          <Card className="h-full min-h-[560px] border-zinc-800 bg-zinc-900/70">
+            <CardHeader>
+              <CardTitle className="text-2xl text-zinc-100 md:text-3xl">Support</CardTitle>
+              <CardDescription className="text-base leading-relaxed text-zinc-300">
+                Need help? We&apos;re here for you 24/7. Reach out to us via chat, email, or phone hotline, and our client support team will be glad to assist you.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4 text-sm text-zinc-300 md:text-base">
+              <div className="rounded-lg border border-zinc-800 bg-zinc-900/70 px-4 py-3">
+                <p className="flex items-center gap-2 font-medium text-zinc-100">
+                  <Mail className="h-4 w-4 text-orange-400" />
+                  Email support
+                </p>
+                <p className="mt-1 text-zinc-300">admin@alphaforge.io</p>
+              </div>
+
+              <div className="rounded-lg border border-zinc-800 bg-zinc-900/70 px-4 py-3">
+                <p className="flex items-center gap-2 font-medium text-zinc-100">
+                  <PhoneCall className="h-4 w-4 text-emerald-400" />
+                  Hotline
+                </p>
+                <p className="mt-1 text-zinc-300">+91 90000 00000 (Mon-Sun, 24/7)</p>
+              </div>
+
+              <div className="rounded-lg border border-zinc-800 bg-zinc-900/70 px-4 py-3">
+                <p className="flex items-center gap-2 font-medium text-zinc-100">
+                  <MessageCircleMore className="h-4 w-4 text-cyan-400" />
+                  Live chat
+                </p>
+                <p className="mt-1 text-zinc-300">Average response time: under 5 minutes</p>
+              </div>
+
+              <div className="space-y-3 rounded-xl border border-zinc-800 bg-zinc-900/60 p-3">
+                <AnimatedBeamDemo />
+                <p className="px-1 text-sm text-zinc-300">
+                  Dedicated client success support for onboarding, checkout, bot activation, and license help.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+          <div className="h-full">
+            <Globe3DDemoSecond className="min-h-[560px]" />
+          </div>
         </div>
       </section>
 
@@ -437,59 +546,49 @@ export function Home() {
 
       <section className="px-4 py-14 md:py-16">
         <div className="mx-auto w-full max-w-[1240px]">
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="font-display text-3xl font-bold leading-tight text-zinc-100 sm:text-4xl md:text-5xl">
-              Frequently Asked Questions
-            </h2>
-            <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-zinc-400">
-              Quick answers about accounts, payments, licenses, subscriptions, and support.
-            </p>
-          </div>
+          <div className="grid gap-8 lg:grid-cols-[320px_minmax(0,1fr)] lg:gap-14">
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6">
+              <h2 className="font-display text-4xl font-bold text-zinc-100">FAQ</h2>
+              <p className="mt-4 text-sm leading-relaxed text-zinc-400">
+                If you couldn&apos;t find an answer to your question, our 24/7 support team will be happy to help you.
+              </p>
+              <Button
+                className="mt-7 h-11 rounded-xl bg-orange-500 px-6 font-semibold text-white hover:bg-orange-600"
+                asChild
+              >
+                <a href="#">Contact support</a>
+              </Button>
+            </div>
 
-          <div className="mx-auto mt-8 max-w-3xl space-y-4 md:mt-12">
-            {faqs.map((faq, index) => {
-              const isOpen = openFaq === index
-              return (
-                <div
-                  key={faq.question}
-                  className="rounded-xl border border-zinc-800 bg-zinc-900/70 shadow-lg transition-all duration-200 hover:border-zinc-700"
-                >
-                  <button
-                    type="button"
-                    className="flex w-full items-center justify-between px-4 py-5 text-left sm:px-6"
-                    onClick={() => setOpenFaq(isOpen ? -1 : index)}
-                  >
-                    <span className="text-base font-semibold text-zinc-100 sm:text-lg">
-                      {faq.question}
-                    </span>
-                    <ChevronDown
-                      className={`h-5 w-5 text-zinc-400 transition-transform duration-200 ${
-                        isOpen ? "rotate-180" : ""
-                      }`}
-                    />
-                  </button>
-
-                  {isOpen && (
-                    <div className="px-4 pb-5 sm:px-6 sm:pb-6">
-                      <p className="text-sm leading-relaxed text-zinc-300 sm:text-base">
+            <div className="space-y-1">
+              {faqs.map((faq, index) => {
+                const isOpen = openFaq === index
+                return (
+                  <div key={faq.question} className="border-b border-zinc-800/90">
+                    <button
+                      type="button"
+                      className="flex w-full items-center justify-between gap-4 py-5 text-left"
+                      onClick={() => setOpenFaq(isOpen ? -1 : index)}
+                    >
+                      <span className="text-2xl font-medium leading-tight text-zinc-200">
+                        {faq.question}
+                      </span>
+                      {isOpen ? (
+                        <Minus className="h-5 w-5 shrink-0 text-zinc-400" />
+                      ) : (
+                        <Plus className="h-5 w-5 shrink-0 text-zinc-400" />
+                      )}
+                    </button>
+                    {isOpen && (
+                      <p className="pb-5 pr-10 text-base leading-relaxed text-zinc-400">
                         {faq.answer}
                       </p>
-                    </div>
-                  )}
-                </div>
-              )
-            })}
+                    )}
+                  </div>
+                )
+              })}
+            </div>
           </div>
-
-          <p className="mt-9 text-center text-sm text-zinc-400 sm:text-base">
-            Didn&apos;t find the answer you are looking for?{" "}
-            <a
-              href="#"
-              className="font-medium text-orange-400 transition-colors duration-200 hover:text-orange-300 hover:underline"
-            >
-              Contact our support
-            </a>
-          </p>
         </div>
       </section>
     </div>

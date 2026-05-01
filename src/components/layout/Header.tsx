@@ -54,58 +54,10 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-zinc-800 bg-void/95 backdrop-blur supports-[backdrop-filter]:bg-void/80">
-      <div className="mx-auto flex h-16 w-full max-w-[1264px] items-center gap-6 px-4">
+      <div className="mx-auto flex h-16 w-full max-w-[1240px] items-center gap-6 px-4">
         <Link to="/" className="font-display text-xl font-bold text-zinc-100">
           AlphaForge
         </Link>
-
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="md:hidden">
-              <Menu className="h-5 w-5" />
-              <span className="sr-only">Open menu</span>
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="md:hidden">
-            <SheetHeader>
-              <SheetTitle>Menu</SheetTitle>
-              <SheetDescription>Navigate products and account pages.</SheetDescription>
-            </SheetHeader>
-            <nav className="mt-6 flex flex-col gap-2">
-              <Button variant="ghost" className="justify-start" asChild>
-                <Link to="/#about">About us</Link>
-              </Button>
-              <Button variant="ghost" className="justify-start" asChild>
-                <Link to="/shop">Products</Link>
-              </Button>
-              <Button variant="ghost" className="justify-start" asChild>
-                <Link to="/shop?featured=1">Featured</Link>
-              </Button>
-              {user && (
-                <Button variant="ghost" className="justify-start" asChild>
-                  <Link to="/account/orders">Orders</Link>
-                </Button>
-              )}
-              {user?.role === "admin" && (
-                <Button variant="ghost" className="justify-start text-orange-400 hover:text-orange-300" asChild>
-                  <Link to="/admin">Admin</Link>
-                </Button>
-              )}
-            </nav>
-            <form onSubmit={handleSearch} className="mt-6">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
-                <Input
-                  type="search"
-                  placeholder="Search bots & products..."
-                  className="pl-9 bg-zinc-900/50"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-              </div>
-            </form>
-          </SheetContent>
-        </Sheet>
 
         <nav className="hidden md:flex items-center gap-6">
           <Link
@@ -233,6 +185,54 @@ export function Header() {
               </Button>
             </>
           )}
+
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="md:hidden">
+                <Menu className="h-5 w-5" />
+                <span className="sr-only">Open menu</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="md:hidden">
+              <SheetHeader>
+                <SheetTitle>Menu</SheetTitle>
+                <SheetDescription>Navigate products and account pages.</SheetDescription>
+              </SheetHeader>
+              <nav className="mt-6 flex flex-col gap-2">
+                <Button variant="ghost" className="justify-start" asChild>
+                  <Link to="/#about">About us</Link>
+                </Button>
+                <Button variant="ghost" className="justify-start" asChild>
+                  <Link to="/shop">Products</Link>
+                </Button>
+                <Button variant="ghost" className="justify-start" asChild>
+                  <Link to="/shop?featured=1">Featured</Link>
+                </Button>
+                {user && (
+                  <Button variant="ghost" className="justify-start" asChild>
+                    <Link to="/account/orders">Orders</Link>
+                  </Button>
+                )}
+                {user?.role === "admin" && (
+                  <Button variant="ghost" className="justify-start text-orange-400 hover:text-orange-300" asChild>
+                    <Link to="/admin">Admin</Link>
+                  </Button>
+                )}
+              </nav>
+              <form onSubmit={handleSearch} className="mt-6">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+                  <Input
+                    type="search"
+                    placeholder="Search bots & products..."
+                    className="pl-9 bg-zinc-900/50"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                  />
+                </div>
+              </form>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
     </header>
